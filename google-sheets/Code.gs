@@ -515,6 +515,7 @@ function doPost(e) {
       if (action === "revokeBiometric") return handleRevokeBiometric(data);
       if (action === "diffPatients") return handleDiffPatients(data);
       if (action === "diffSales") return handleDiffSales(data);
+      if (action === "importMemberships") return handleImportMemberships(data);
 
       // ---- Patient app reads (no admin auth needed) ----
       if (action === "login") return handleLogin(data);
@@ -2097,6 +2098,80 @@ function handleImportSales(data) {
   return successResponse({
     message: "Sales import complete",
     added: newSales.length
+  });
+}
+
+
+function handleImportMemberships(data) {
+  var memberships = data.memberships || [];
+  if (memberships.length === 0) return errorResponse("No memberships to import");
+
+  var sheet = getSheet("Billing");
+  if (!sheet) return errorResponse("Billing tab not found");
+
+  var added = 0;
+  var updated = 0;
+  var skipped = 0;
+
+  for (var i = 0; i < memberships.length; i++) {
+    var m = memberships[i];
+    var name = m.patient || "";
+    if (!name) { skipped++; continue; }
+
+    // Check if patient exists
+    var pRow = findRowByValue("Patients", P_NAME, name);
+    if (pRow === -1) { skipped++; continue; } // Skip if not a known patient
+
+    // Check if billing row exists
+    var bRow = findRowByValue("Billing", S_PATIENT, name);
+    var startDate = parseDate(m.startDate) || parseDate(m.purchaseDate) || new Date();
+    var contractEnd = parseDate(m.contractEnd) || "";
+    var cyclesLeft = safeNumber(m.cyclesLeft);
+    var outstanding = safeNumber(m.outstanding);
+    var plan = m.plan || "";
+    var status = m.status || "Active";
+
+    // Map JaneApp status
+    if (status === "Expired") status = "Expired";
+    else if (status === "Cancelled") status = "Cancelled";
+    else status = "Active";
+
+    if (bRow === -1) {
+      // Create new billing row
+      sheet.appendRow([
+        name,
+        plan,
+        0, // rate — not in membership CSV
+        0, // term
+        startDate,
+        "", // last payment
+        contractEnd,
+        cyclesLeft,
+        outstanding,
+        status,
+        "", // last shipped
+        "", // next ship
+        "", // next pay due
+        ""  // notes
+      ]);
+      added++;
+    } else {
+      // Update existing billing row
+      sheet.getRange(bRow, S_PLAN + 1).setValue(plan);
+      sheet.getRange(bRow, S_MEMSTART + 1).setValue(startDate);
+      sheet.getRange(bRow, S_CONTEND + 1).setValue(contractEnd);
+      sheet.getRange(bRow, S_CYCLES + 1).setValue(cyclesLeft);
+      sheet.getRange(bRow, S_OUTSTANDING + 1).setValue(outstanding);
+      sheet.getRange(bRow, S_STATUS + 1).setValue(status);
+      updated++;
+    }
+  }
+
+  return successResponse({
+    message: "Memberships import complete",
+    added: added,
+    updated: updated,
+    skipped: skipped
   });
 }
 
