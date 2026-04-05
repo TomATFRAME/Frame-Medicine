@@ -1285,11 +1285,13 @@ function handleGetCatalog(params) {
   for (var i = 0; i < data.length; i++) {
     if (!data[i][0]) continue;
     catalog.push({
-      medication: safeString(data[i][0]),
-      formulation: safeString(data[i][1]),
+      productCode: safeString(data[i][0]),
+      name: safeString(data[i][1]),
       strength: safeString(data[i][2]),
-      vialCost: safeNumber(data[i][3]),
-      notes: safeString(data[i][4])
+      form: safeString(data[i][3]),
+      category: safeString(data[i][4]),
+      unit: safeString(data[i][5]),
+      cost: safeNumber(data[i][6])
     });
   }
   return successResponse({ catalog: catalog });
@@ -2882,7 +2884,7 @@ function setupSheetHeaders() {
     "Finance": ["Month","Year","Month Num","Revenue","Med Costs","Overhead","Net Profit","Tom Split","Colin Split","Locked"],
     "Overhead Items": ["Month","Year","Description","Amount"],
     "Sales": ["Invoice","Patient","Item","Purchase Date","Total","Status"],
-    "Catalog": ["Medication","Formulation","Vial Cost","mg Per Vial","Notes"],
+    "Catalog": ["Product Code","Name","Strength","Form","Category","Unit","Negotiated Price"],
     "Settings": ["Key","Value"],
     "Audit Log": ["Timestamp","Admin","Role","Patient","Action","Details"]
   };
