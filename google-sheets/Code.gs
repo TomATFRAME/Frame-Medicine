@@ -36,7 +36,7 @@ var P_MED = 10, P_PLAN = 11, P_RATE = 12, P_TERM = 13, P_MEMSTART = 14;
 var P_CONTEND = 15, P_CYCLES = 16, P_OUTSTANDING = 17;
 var P_CIDAY = 18, P_CITIME = 19, P_GLPDAY = 20, P_GLPTIME = 21;
 var P_STATUS = 22, P_FOLLOWUP = 23, P_NOTES = 24;
-var P_PUSH = 25, P_PUSHSUB = 26, P_REFSOURCE = 27, P_REFBY = 28, P_BIOTOKEN = 29, P_BIOTOKEN_DATE = 30;
+var P_PUSH = 25, P_PUSHSUB = 26, P_REFSOURCE = 27, P_REFBY = 28, P_BIOTOKEN = 29, P_BIOTOKEN_DATE = 30, P_COMMPREF = 31;
 
 // Billing Tab
 var S_PATIENT = 0, S_PLAN = 1, S_RATE = 2, S_TERM = 3, S_MEMSTART = 4;
@@ -369,7 +369,7 @@ function sendPushNotification(patientName, title, body) {
   var row = findRowByValue("Patients", P_NAME, patientName);
   if (row === -1) return false;
   var sheet = getSheet("Patients");
-  var data = sheet.getRange(row, 1, 1, 29).getValues()[0];
+  var data = sheet.getRange(row, 1, 1, 32).getValues()[0];
   if (safeString(data[P_PUSH]) !== "YES") return false;
   var subJson = safeString(data[P_PUSHSUB]);
   if (!subJson) return false;
@@ -380,6 +380,14 @@ function sendPushNotification(patientName, title, body) {
 }
 
 function smartSendMessage(patientName, phone, title, body, isCritical) {
+  // Check patient communication preference
+  if (patientName && !isCritical) {
+    var pRow = findRowByValue("Patients", P_NAME, patientName);
+    if (pRow !== -1) {
+      var pref = safeString(getSheet("Patients").getRange(pRow, P_COMMPREF + 1).getValue()).toLowerCase();
+      if (pref === "none" || pref === "opt-out") return false;
+    }
+  }
   var pushSent = false;
   if (patientName) {
     pushSent = sendPushNotification(patientName, title, body);
@@ -447,6 +455,16 @@ function doPost(e) {
       if (action === "declineRefill") return handleDeclineRefill(data);
       if (action === "sendMessage") return handleSendMessage(data);
       if (action === "markRead") return handleMarkRead(data);
+      // ---- Admin write actions (require admin token) ----
+      var adminWriteActions = ["savePatient","updateStatus","markPaid","editBilling",
+        "newOrder","markLabDone","sendLabReminder","saveLead","convertLead",
+        "updateLeadStage","importPatients","importSales","updateSettings",
+        "lockMonth","updateOverhead","addOverheadItem","removeOverheadItem",
+        "clearFollowUp","saveNotes","logDoseChange","diffPatients","diffSales"];
+      if (adminWriteActions.indexOf(action) !== -1) {
+        var adminWriteErr = requireAdmin(data);
+        if (adminWriteErr) return adminWriteErr;
+      }
       if (action === "savePatient") return handleSavePatient(data);
       if (action === "updateStatus") return handleUpdateStatus(data);
       if (action === "markPaid") return handleMarkPaid(data);
@@ -473,7 +491,7 @@ function doPost(e) {
       if (action === "diffPatients") return handleDiffPatients(data);
       if (action === "diffSales") return handleDiffSales(data);
 
-      // Route read actions through POST to keep PHI out of URLs
+      // ---- Patient app reads (no admin auth needed) ----
       if (action === "login") return handleLogin(data);
       if (action === "verifyOtp") return handleVerifyOtp(data);
       if (action === "verifyBiometric") return handleVerifyBiometric(data);
@@ -483,7 +501,16 @@ function doPost(e) {
       if (action === "getWeightLog") return handleGetWeightLog(data);
       if (action === "getCheckIns") return handleGetCheckIns(data);
       if (action === "getLabStatus") return handleGetLabStatus(data);
+
+      // ---- Admin reads (require admin token) ----
       if (action === "adminLogin") return handleAdminLogin(data);
+      var adminActions = ["getDashboard","getPatientDetail","getLeads","getLeadDetail",
+        "getInbox","getConversation","getPnl","getSettings","getLabsDashboard",
+        "getBillingDue","getCatalog","getRefillLog","getDoseHistory"];
+      if (adminActions.indexOf(action) !== -1) {
+        var authErr = requireAdmin(data);
+        if (authErr) return authErr;
+      }
       if (action === "getDashboard") return handleGetDashboard(data);
       if (action === "getPatientDetail") return handleGetPatientDetail(data);
       if (action === "getLeads") return handleGetLeads(data);
@@ -537,7 +564,7 @@ function handleVerifyOtp(params) {
     var row = findRowByPhone("Patients", P_PHONE, phone);
     if (row === -1) return errorResponse("Patient not found");
     var sheet = getSheet("Patients");
-    var data = sheet.getRange(row, 1, 1, 29).getValues()[0];
+    var data = sheet.getRange(row, 1, 1, 32).getValues()[0];
     return successResponse({
       verified: true,
       patient: buildPatientObj(data)
@@ -597,7 +624,7 @@ function handleGetPatient(params) {
   var row = findRowByPhone("Patients", P_PHONE, phone);
   if (row === -1) return errorResponse("Patient not found");
   var sheet = getSheet("Patients");
-  var data = sheet.getRange(row, 1, 1, 29).getValues()[0];
+  var data = sheet.getRange(row, 1, 1, 32).getValues()[0];
   return successResponse({ patient: buildPatientObj(data) });
 }
 
@@ -607,7 +634,7 @@ function handleGetPatientDashboard(params) {
   var row = findRowByPhone("Patients", P_PHONE, phone);
   if (row === -1) return errorResponse("Patient not found");
   var sheet = getSheet("Patients");
-  var pData = sheet.getRange(row, 1, 1, 29).getValues()[0];
+  var pData = sheet.getRange(row, 1, 1, 32).getValues()[0];
   var patient = buildPatientObj(pData);
   var name = safeString(pData[P_NAME]);
 
@@ -712,19 +739,36 @@ function handleAdminLogin(params) {
   var tomPw = safeString(getSettingValue("Tom Password"));
   var colinPw = safeString(getSettingValue("Colin Password"));
 
-  if (email === tomEmail) {
-    if (password === tomPw) {
-      return successResponse({ role: "tom", name: "Tom", email: email });
-    }
-    return errorResponse("Invalid password");
+  var role = "";
+  var name = "";
+  if (email === tomEmail && password === tomPw) {
+    role = "tom"; name = "Tom";
+  } else if (email === colinEmail && password === colinPw) {
+    role = "colin"; name = "Dr. Sheffield";
+  } else {
+    return errorResponse("Invalid credentials");
   }
-  if (email === colinEmail) {
-    if (password === colinPw) {
-      return successResponse({ role: "colin", name: "Dr. Sheffield", email: email });
-    }
-    return errorResponse("Invalid password");
-  }
-  return errorResponse("Email not recognized");
+
+  // Generate session token
+  var token = Utilities.getUuid();
+  var cache = CacheService.getScriptCache();
+  cache.put("admin_session_" + token, JSON.stringify({ role: role, name: name, email: email }), 28800); // 8 hours
+  return successResponse({ role: role, name: name, email: email, adminToken: token });
+}
+
+function verifyAdminToken(params) {
+  var token = params.adminToken || "";
+  if (!token) return null;
+  var cache = CacheService.getScriptCache();
+  var session = cache.get("admin_session_" + token);
+  if (!session) return null;
+  return JSON.parse(session);
+}
+
+function requireAdmin(params) {
+  var session = verifyAdminToken(params);
+  if (!session) return errorResponse("Unauthorized — please log in");
+  return null; // null means authorized
 }
 
 function handleGetDashboard(params) {
@@ -741,6 +785,8 @@ function handleGetDashboard(params) {
     unpaid: 0
   };
 
+  var allOrders = getAllPatientOrders();
+
   var patientList = [];
   for (var i = 0; i < patients.length; i++) {
     var p = patients[i];
@@ -751,8 +797,9 @@ function handleGetDashboard(params) {
     var med = safeString(p[P_MED]);
     var phone = safeString(p[P_PHONE]);
 
-    // Get latest order for supply info
-    var orders = getPatientOrders(name);
+    // Get latest order for supply info (from pre-loaded map)
+    var orderEntry = allOrders[name.toLowerCase()];
+    var orders = orderEntry ? orderEntry.orders : [];
     var daysLeft = null;
     var nextDue = null;
     if (orders.length > 0) {
@@ -826,7 +873,7 @@ function handleGetPatientDetail(params) {
   if (row === -1) return errorResponse("Patient not found");
 
   var sheet = getSheet("Patients");
-  var pData = sheet.getRange(row, 1, 1, 29).getValues()[0];
+  var pData = sheet.getRange(row, 1, 1, 32).getValues()[0];
   var patient = buildPatientObj(pData);
 
   // Billing
@@ -1521,10 +1568,12 @@ function handleSavePatient(data) {
     createLabsRow(name);
     // Also create check-in schedule row
     createCheckInRow(name, data);
+    auditLog(data.adminToken, name, "Patient Created", "New patient added");
     return successResponse({ message: "Patient created", isNew: true });
   } else {
     var range = sheet.getRange(existingRow, 1, 1, rowData.length);
     range.setValues([rowData]);
+    auditLog(data.adminToken, name, "Patient Updated", "Record modified");
     return successResponse({ message: "Patient updated", isNew: false });
   }
 }
@@ -1544,6 +1593,7 @@ function handleUpdateStatus(data) {
       getSheet("Billing").getRange(bRow, S_STATUS + 1).setValue("Cancelled");
     }
   }
+  auditLog(data.adminToken, name, "Status Changed", "Set to " + status);
   return successResponse({ message: "Status updated" });
 }
 
@@ -1583,6 +1633,7 @@ function handleMarkPaid(data) {
   }
 
   appendRefillLog(name, "", "Payment marked ($" + rate + ")", "Admin", "Cycles remaining: " + (cycles - 1));
+  auditLog(data.adminToken, name, "Payment Recorded", "$" + rate + " — cycles left: " + (cycles - 1));
   return successResponse({
     message: "Payment recorded",
     newOutstanding: newOutstanding,
@@ -1607,6 +1658,7 @@ function handleEditBilling(data) {
   if (data.outstanding !== undefined) sheet.getRange(bRow, S_OUTSTANDING + 1).setValue(safeNumber(data.outstanding));
   if (data.plan) sheet.getRange(bRow, S_PLAN + 1).setValue(data.plan);
   if (data.status) sheet.getRange(bRow, S_STATUS + 1).setValue(data.status);
+  auditLog(data.adminToken, data.patient || "", "Billing Updated", "Billing record modified");
   return successResponse({ message: "Billing updated" });
 }
 
@@ -1685,6 +1737,7 @@ function handleNewOrder(data) {
   }
 
   appendRefillLog(name, med, "Order logged: " + vials + " vials", "Admin", "Ship: " + formatDateStr(shipDate));
+  auditLog(data.adminToken, name, "Order Logged", med + " " + dose + "mg/wk, " + vials + " vials, ship " + formatDateStr(shipDate));
 
   return successResponse({
     message: "Order logged",
@@ -2265,7 +2318,8 @@ function buildPatientObj(data) {
     notes: safeString(data[P_NOTES]),
     pushEnabled: safeString(data[P_PUSH]),
     referralSource: safeString(data[P_REFSOURCE]),
-    referredBy: safeString(data[P_REFBY])
+    referredBy: safeString(data[P_REFBY]),
+    commPref: safeString(data[P_COMMPREF]) || "all"
   };
 }
 
@@ -2298,6 +2352,44 @@ function getPatientOrders(name) {
     return new Date(b.orderDate) - new Date(a.orderDate);
   });
   return orders;
+}
+
+// Bulk load: read Medications sheet ONCE, return map of name → orders
+function getAllPatientOrders() {
+  var sheet = getSheet("Medications");
+  if (!sheet) return {};
+  var data = sheet.getDataRange().getValues();
+  var map = {};
+  for (var i = MED_DATA_START_ROW - 1; i < data.length; i++) {
+    var name = safeString(data[i][M_PATIENT]);
+    var key = name.toLowerCase();
+    if (!key) continue;
+    if (!map[key]) map[key] = { name: name, orders: [] };
+    map[key].orders.push({
+      orderDate: formatDateStr(data[i][M_ORDERDATE]),
+      medication: safeString(data[i][M_MED]),
+      formulation: safeString(data[i][M_FORM]),
+      dose: safeNumber(data[i][M_DOSE]),
+      vials: safeNumber(data[i][M_VIALS]),
+      daysCovered: safeNumber(data[i][M_DAYS]),
+      shipDate: formatDateStr(data[i][M_SHIPDATE]),
+      nextDue: formatDateStr(data[i][M_NEXTDUE]),
+      vialCost: safeNumber(data[i][M_VIALCOST]),
+      supplies: safeNumber(data[i][M_SUPPLY]),
+      shipping: safeNumber(data[i][M_SHIPPING]),
+      total: safeNumber(data[i][M_TOTAL]),
+      monthlyEst: safeNumber(data[i][M_MONTHLY]),
+      notes: safeString(data[i][M_NOTES])
+    });
+  }
+  // Sort each patient's orders
+  var keys = Object.keys(map);
+  for (var j = 0; j < keys.length; j++) {
+    map[keys[j]].orders.sort(function(a, b) {
+      return new Date(b.orderDate) - new Date(a.orderDate);
+    });
+  }
+  return map;
 }
 
 function getPatientBilling(name) {
@@ -2525,6 +2617,23 @@ function logDoseChange(patient, medication, oldDose, newDose, changedBy, reason)
   sheet.appendRow([new Date(), patient, medication, oldDose, newDose, changedBy, reason]);
 }
 
+// Audit trail: logs who changed what on which patient record
+function auditLog(adminToken, patient, action, details) {
+  var sheet = getSheet("Audit Log");
+  if (!sheet) {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    sheet = ss.insertSheet("Audit Log");
+    sheet.appendRow(["Timestamp", "Admin", "Role", "Patient", "Action", "Details"]);
+  }
+  var who = "System";
+  var role = "";
+  if (adminToken) {
+    var session = verifyAdminToken({ adminToken: adminToken });
+    if (session) { who = session.name; role = session.role; }
+  }
+  sheet.appendRow([new Date(), who, role, patient, action, details]);
+}
+
 function updateLabNextDue(sheetRow) {
   var sheet = getSheet("Labs");
   var data = sheet.getRange(sheetRow, 1, 1, 13).getValues()[0];
@@ -2696,6 +2805,7 @@ function dailyDigest() {
   today.setHours(0, 0, 0, 0);
 
   // ---- Collect data ----
+  var allOrders = getAllPatientOrders();
   var overdue = [];
   var dueSoon = [];
   var followUps = [];
@@ -2705,7 +2815,8 @@ function dailyDigest() {
     if (status === "INACTIVE" || status === "Staff") continue;
     var name = safeString(patients[i][P_NAME]);
 
-    var orders = getPatientOrders(name);
+    var orderEntry = allOrders[name.toLowerCase()];
+    var orders = orderEntry ? orderEntry.orders : [];
     if (orders.length > 0) {
       var nextDue = parseDate(orders[0].nextDue);
       if (nextDue) {
@@ -2862,6 +2973,7 @@ function dailyRefillAlerts() {
   var today = new Date();
   today.setHours(0, 0, 0, 0);
   var alertDays = safeNumber(getSettingValue("Refill Alert Days Before Due")) || 14;
+  var allOrders = getAllPatientOrders();
 
   for (var i = 0; i < patients.length; i++) {
     var status = safeString(patients[i][P_STATUS]);
@@ -2870,7 +2982,8 @@ function dailyRefillAlerts() {
     var phone = safeString(patients[i][P_PHONE]);
     var preferred = safeString(patients[i][P_PREFERRED]) || name.split(" ")[0];
 
-    var orders = getPatientOrders(name);
+    var orderEntry = allOrders[name.toLowerCase()];
+    var orders = orderEntry ? orderEntry.orders : [];
     if (orders.length === 0) continue;
     var nextDue = parseDate(orders[0].nextDue);
     if (!nextDue) continue;

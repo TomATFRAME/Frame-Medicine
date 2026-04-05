@@ -583,17 +583,30 @@ var convoSmsToggle = true;
 })();
 
 // ---- API ----
+function attachAdminToken(obj) {
+  if (adminUser && adminUser.adminToken) obj.adminToken = adminUser.adminToken;
+  return obj;
+}
+
 function apiGet(action, params, cb) {
   params.action = action;
+  attachAdminToken(params);
   fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(params) })
-    .then(function(r) { return r.json(); }).then(cb)
+    .then(function(r) { return r.json(); }).then(function(d) {
+      if (d.error === "Unauthorized — please log in") { doLogout(); showToast("Session expired — please log in again"); return; }
+      cb(d);
+    })
     .catch(function(e) { cb({ success: false, error: e.message }); });
 }
 
 function apiPost(action, body, cb) {
   body.action = action;
+  attachAdminToken(body);
   fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(body) })
-    .then(function(r) { return r.json(); }).then(cb)
+    .then(function(r) { return r.json(); }).then(function(d) {
+      if (d.error === "Unauthorized — please log in") { doLogout(); showToast("Session expired — please log in again"); return; }
+      cb(d);
+    })
     .catch(function(e) { cb({ success: false, error: e.message }); });
 }
 
@@ -627,7 +640,7 @@ function doLogin() {
   apiGet("adminLogin", { email: email, password: pw }, function(d) {
     document.getElementById("login-loading").classList.add("hidden");
     if (d.success) {
-      adminUser = { role: d.role, name: d.name, email: d.email };
+      adminUser = { role: d.role, name: d.name, email: d.email, adminToken: d.adminToken };
       localStorage.setItem("frame_admin", JSON.stringify(adminUser));
       document.getElementById("bottom-nav").style.display = "block";
       if (adminUser.role === "colin") {
