@@ -246,8 +246,27 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
       <button class="btn btn-ghost btn-block mt-12" onclick="showLoginStep1()">Use Different Number</button>
     </div>
 
+    <div id="login-biometric" style="display:none;margin-top:24px">
+      <div style="width:100%;height:1px;background:rgba(255,255,255,0.1);margin-bottom:24px"></div>
+      <button class="btn btn-ghost btn-block" onclick="biometricLogin()" id="biometric-btn">
+        <span style="font-size:20px;margin-right:8px">&#128274;</span> Sign in with Face ID / Fingerprint
+      </button>
+    </div>
+
     <div id="login-error" style="color:#ff4444;margin-top:16px;display:none"></div>
     <div id="login-loading" class="loader" style="display:none"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- Biometric enrollment modal -->
+<div id="biometric-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center">
+  <div style="max-width:340px;padding:32px;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">&#128274;</div>
+    <h2 style="margin-bottom:8px">Enable Quick Sign In</h2>
+    <p class="text-muted" style="margin-bottom:24px">Use Face ID or fingerprint to sign in instantly next time — no verification code needed.</p>
+    <button class="btn btn-orange btn-block" onclick="enrollBiometric()">Enable</button>
+    <button class="btn btn-ghost btn-block mt-12" onclick="dismissBiometric()">Not Now</button>
   </div>
 </div>
 
@@ -639,6 +658,7 @@ function verifyOtp() {
           document.getElementById("bottom-nav").style.display = "block";
           requestPushPermission();
           checkInstallPrompt();
+          promptBiometricIfAvailable();
         });
       }
     } else {
@@ -655,9 +675,13 @@ function showLoginStep1() {
 
 function logout() {
   localStorage.removeItem("frame_phone");
+  localStorage.removeItem("frame_bio_cred");
+  localStorage.removeItem("frame_bio_token");
+  localStorage.removeItem("frame_bio_dismissed");
   currentPatient = null;
   if (messagePollingInterval) clearInterval(messagePollingInterval);
   document.getElementById("bottom-nav").style.display = "none";
+  document.getElementById("login-biometric").style.display = "none";
   showScreen("login");
 }
 
@@ -1248,6 +1272,157 @@ document.getElementById("login-code").addEventListener("keydown", function(e) {
 document.getElementById("login-phone").addEventListener("keydown", function(e) {
   if (e.key === "Enter") requestOtp();
 });
+
+
+// ---- BIOMETRIC AUTH (WebAuthn) ----
+function isBiometricAvailable() {
+  return window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable
+    ? PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+    : Promise.resolve(false);
+}
+
+function generateToken() {
+  var arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, function(b) { return b.toString(16).padStart(2, "0"); }).join("");
+}
+
+function showBiometricModal() {
+  var modal = document.getElementById("biometric-modal");
+  modal.style.display = "flex";
+}
+
+function dismissBiometric() {
+  document.getElementById("biometric-modal").style.display = "none";
+  localStorage.setItem("frame_bio_dismissed", "1");
+}
+
+function promptBiometricIfAvailable() {
+  if (localStorage.getItem("frame_bio_cred")) return; // already enrolled
+  if (localStorage.getItem("frame_bio_dismissed")) return;
+  isBiometricAvailable().then(function(avail) {
+    if (avail) showBiometricModal();
+  });
+}
+
+function enrollBiometric() {
+  document.getElementById("biometric-modal").style.display = "none";
+  var phone = currentPatient ? currentPatient.phone : "";
+  if (!phone) return;
+
+  var token = generateToken();
+  var userId = new TextEncoder().encode(phone);
+  var challenge = crypto.getRandomValues(new Uint8Array(32));
+
+  var createOptions = {
+    publicKey: {
+      rp: { name: "FRAME Medicine" },
+      user: {
+        id: userId,
+        name: phone,
+        displayName: currentPatient.name || phone
+      },
+      challenge: challenge,
+      pubKeyCredParams: [
+        { type: "public-key", alg: -7 },
+        { type: "public-key", alg: -257 }
+      ],
+      authenticatorSelection: {
+        authenticatorAttachment: "platform",
+        userVerification: "required"
+      },
+      timeout: 60000
+    }
+  };
+
+  navigator.credentials.create(createOptions).then(function(cred) {
+    // Store credential ID locally
+    var credId = btoa(String.fromCharCode.apply(null, new Uint8Array(cred.rawId)));
+    localStorage.setItem("frame_bio_cred", credId);
+    localStorage.setItem("frame_bio_token", token);
+
+    // Save token to backend
+    apiPost("saveBiometric", { phone: phone, token: token }, function(d) {
+      if (d.success) {
+        showToast("Face ID / fingerprint enabled!");
+      } else {
+        showToast(d.error || "Failed to save");
+        localStorage.removeItem("frame_bio_cred");
+        localStorage.removeItem("frame_bio_token");
+      }
+    });
+  }).catch(function(err) {
+    console.log("Biometric enrollment failed:", err);
+    showToast("Could not set up biometric login");
+  });
+}
+
+function biometricLogin() {
+  var credId = localStorage.getItem("frame_bio_cred");
+  var token = localStorage.getItem("frame_bio_token");
+  if (!credId || !token) return;
+
+  var rawId = Uint8Array.from(atob(credId), function(c) { return c.charCodeAt(0); });
+  var challenge = crypto.getRandomValues(new Uint8Array(32));
+
+  var getOptions = {
+    publicKey: {
+      challenge: challenge,
+      allowCredentials: [{
+        type: "public-key",
+        id: rawId,
+        transports: ["internal"]
+      }],
+      userVerification: "required",
+      timeout: 60000
+    }
+  };
+
+  document.getElementById("login-error").style.display = "none";
+  showLoading(true);
+
+  navigator.credentials.get(getOptions).then(function() {
+    // Biometric verified locally — now verify token with backend
+    apiGet("verifyBiometric", { token: token }, function(data) {
+      showLoading(false);
+      if (data.success && data.verified) {
+        localStorage.setItem("frame_phone", data.patient.phone);
+        currentPatient = data.patient;
+        apiGet("getPatientDashboard", { phone: data.patient.phone }, function(dashData) {
+          if (dashData.success) {
+            renderDashboard(dashData);
+          }
+          showScreen("home");
+          document.getElementById("bottom-nav").style.display = "block";
+        });
+      } else {
+        showLoading(false);
+        document.getElementById("login-error").textContent = "Biometric login failed. Please use your phone number.";
+        document.getElementById("login-error").style.display = "block";
+        // Clear invalid credentials
+        localStorage.removeItem("frame_bio_cred");
+        localStorage.removeItem("frame_bio_token");
+        document.getElementById("login-biometric").style.display = "none";
+      }
+    });
+  }).catch(function(err) {
+    showLoading(false);
+    console.log("Biometric auth failed:", err);
+  });
+}
+
+// Show biometric button on login screen if enrolled
+function checkBiometricLogin() {
+  if (localStorage.getItem("frame_bio_cred") && localStorage.getItem("frame_bio_token")) {
+    isBiometricAvailable().then(function(avail) {
+      if (avail) {
+        document.getElementById("login-biometric").style.display = "block";
+      }
+    });
+  }
+}
+
+checkBiometricLogin();
 </script>
 </body>
 </html>

@@ -35,7 +35,7 @@ var P_MED = 10, P_PLAN = 11, P_RATE = 12, P_TERM = 13, P_MEMSTART = 14;
 var P_CONTEND = 15, P_CYCLES = 16, P_OUTSTANDING = 17;
 var P_CIDAY = 18, P_CITIME = 19, P_GLPDAY = 20, P_GLPTIME = 21;
 var P_STATUS = 22, P_FOLLOWUP = 23, P_NOTES = 24;
-var P_PUSH = 25, P_PUSHSUB = 26, P_REFSOURCE = 27, P_REFBY = 28;
+var P_PUSH = 25, P_PUSHSUB = 26, P_REFSOURCE = 27, P_REFBY = 28, P_BIOTOKEN = 29;
 
 // Billing Tab
 var S_PATIENT = 0, S_PLAN = 1, S_RATE = 2, S_TERM = 3, S_MEMSTART = 4;
@@ -397,6 +397,7 @@ function doGet(e) {
     if (action === "getWeightLog") return handleGetWeightLog(e.parameter);
     if (action === "getCheckIns") return handleGetCheckIns(e.parameter);
     if (action === "getLabStatus") return handleGetLabStatus(e.parameter);
+    if (action === "verifyBiometric") return handleVerifyBiometric(e.parameter);
     if (action === "adminLogin") return handleAdminLogin(e.parameter);
     if (action === "getDashboard") return handleGetDashboard(e.parameter);
     if (action === "getPatientDetail") return handleGetPatientDetail(e.parameter);
@@ -458,6 +459,7 @@ function doPost(e) {
       if (action === "saveNotes") return handleSaveNotes(data);
       if (action === "savePushSubscription") return handleSavePushSubscription(data);
       if (action === "logDoseChange") return handleLogDoseChange(data);
+      if (action === "saveBiometric") return handleSaveBiometric(data);
       if (action === "diffPatients") return handleDiffPatients(data);
       if (action === "diffSales") return handleDiffSales(data);
       return errorResponse("Unknown action: " + action);
@@ -506,6 +508,31 @@ function handleVerifyOtp(params) {
     });
   }
   return errorResponse("Invalid code");
+}
+
+function handleSaveBiometric(data) {
+  var phone = formatPhone(data.phone || "");
+  var token = data.token || "";
+  if (!phone || !token) return errorResponse("Phone and token required");
+  var row = findRowByPhone("Patients", P_PHONE, phone);
+  if (row === -1) return errorResponse("Patient not found");
+  var sheet = getSheet("Patients");
+  sheet.getRange(row, P_BIOTOKEN + 1).setValue(token);
+  return successResponse({ message: "Biometric token saved" });
+}
+
+function handleVerifyBiometric(params) {
+  var token = params.token || "";
+  if (!token) return errorResponse("Token required");
+  var patients = getSheetData("Patients");
+  for (var i = 0; i < patients.length; i++) {
+    if (safeString(patients[i][P_BIOTOKEN]) === token) {
+      var sheet = getSheet("Patients");
+      var data = sheet.getRange(i + 2, 1, 1, 30).getValues()[0];
+      return successResponse({ verified: true, patient: buildPatientObj(data) });
+    }
+  }
+  return errorResponse("Invalid biometric token");
 }
 
 function handleGetPatient(params) {
