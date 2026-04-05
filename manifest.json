@@ -1,0 +1,22 @@
+{
+  "name": "FRAME Medicine",
+  "short_name": "FRAME",
+  "description": "Your FRAME Medicine patient portal",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#E8891A",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://framemedicine.com/wp-content/uploads/2025/08/Untitled-design.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://framemedicine.com/wp-content/uploads/2025/08/Untitled-design.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
