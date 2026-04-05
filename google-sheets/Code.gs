@@ -463,6 +463,32 @@ function doPost(e) {
       if (action === "revokeBiometric") return handleRevokeBiometric(data);
       if (action === "diffPatients") return handleDiffPatients(data);
       if (action === "diffSales") return handleDiffSales(data);
+
+      // Route read actions through POST to keep PHI out of URLs
+      if (action === "login") return handleLogin(data);
+      if (action === "verifyOtp") return handleVerifyOtp(data);
+      if (action === "verifyBiometric") return handleVerifyBiometric(data);
+      if (action === "getPatient") return handleGetPatient(data);
+      if (action === "getPatientDashboard") return handleGetPatientDashboard(data);
+      if (action === "getMessages") return handleGetMessages(data);
+      if (action === "getWeightLog") return handleGetWeightLog(data);
+      if (action === "getCheckIns") return handleGetCheckIns(data);
+      if (action === "getLabStatus") return handleGetLabStatus(data);
+      if (action === "adminLogin") return handleAdminLogin(data);
+      if (action === "getDashboard") return handleGetDashboard(data);
+      if (action === "getPatientDetail") return handleGetPatientDetail(data);
+      if (action === "getLeads") return handleGetLeads(data);
+      if (action === "getLeadDetail") return handleGetLeadDetail(data);
+      if (action === "getInbox") return handleGetInbox(data);
+      if (action === "getConversation") return handleGetConversation(data);
+      if (action === "getPnl") return handleGetPnl(data);
+      if (action === "getSettings") return handleGetSettings(data);
+      if (action === "getLabsDashboard") return handleGetLabsDashboard(data);
+      if (action === "getBillingDue") return handleGetBillingDue(data);
+      if (action === "getCatalog") return handleGetCatalog(data);
+      if (action === "getRefillLog") return handleGetRefillLog(data);
+      if (action === "getDoseHistory") return handleGetDoseHistory(data);
+
       return errorResponse("Unknown action: " + action);
     } else {
       // Twilio inbound SMS (form-encoded)

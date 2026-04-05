@@ -578,12 +578,9 @@ var convoSmsToggle = true;
 
 // ---- API ----
 function apiGet(action, params, cb) {
-  var url = API_URL + "?action=" + action;
-  var keys = Object.keys(params);
-  for (var i = 0; i < keys.length; i++) {
-    url += "&" + keys[i] + "=" + encodeURIComponent(params[keys[i]]);
-  }
-  fetch(url).then(function(r) { return r.json(); }).then(cb)
+  params.action = action;
+  fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(params) })
+    .then(function(r) { return r.json(); }).then(cb)
     .catch(function(e) { cb({ success: false, error: e.message }); });
 }
 

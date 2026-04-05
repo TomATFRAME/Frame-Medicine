@@ -588,12 +588,12 @@ var selectedRating = null;
 
 // ---- API HELPERS ----
 function apiGet(action, params, callback) {
-  var url = API_URL + "?action=" + action;
-  var keys = Object.keys(params);
-  for (var i = 0; i < keys.length; i++) {
-    url += "&" + keys[i] + "=" + encodeURIComponent(params[keys[i]]);
-  }
-  fetch(url)
+  params.action = action;
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(params)
+  })
     .then(function(r) { return r.json(); })
     .then(function(data) { callback(data); })
     .catch(function(err) { callback({ success: false, error: err.message }); });
