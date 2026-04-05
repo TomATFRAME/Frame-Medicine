@@ -1862,11 +1862,11 @@ function previewSalesImport(headers, dataRows) {
       var h = headers[j];
       var v = j < row.length ? row[j].trim() : "";
       if (h.indexOf("invoice") !== -1) obj.invoice = v;
-      if (h === "patient" || h === "client" || h === "name") obj.patient = v;
-      if (h === "item" || h === "product" || h === "service") obj.item = v;
+      if (h.indexOf("patient") !== -1 || h.indexOf("client") !== -1 || h === "name") obj.patient = v;
+      if (h.indexOf("item") !== -1 || h.indexOf("product") !== -1 || h.indexOf("service") !== -1) obj.item = v;
       if (h.indexOf("date") !== -1 || h.indexOf("purchase") !== -1) obj.purchaseDate = v;
-      if (h === "total" || h === "amount") obj.total = v;
-      if (h === "status") obj.status = v;
+      if (h.indexOf("total") !== -1 || h.indexOf("amount") !== -1) obj.total = v;
+      if (h.indexOf("status") !== -1) obj.status = v;
     }
     if (obj.invoice) mapped.push(obj);
   }
