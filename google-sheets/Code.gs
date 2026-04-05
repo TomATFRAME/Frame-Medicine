@@ -2111,6 +2111,9 @@ function handleImportMemberships(data) {
   var sheet = getSheet("Billing");
   if (!sheet) return errorResponse("Billing tab not found");
 
+  // Load all membership rates from Settings
+  var rateMap = getMembershipRates();
+
   var added = 0;
   var updated = 0;
   var skipped = 0;
@@ -2122,9 +2125,8 @@ function handleImportMemberships(data) {
 
     // Check if patient exists
     var pRow = findRowByValue("Patients", P_NAME, name);
-    if (pRow === -1) { skipped++; continue; } // Skip if not a known patient
+    if (pRow === -1) { skipped++; continue; }
 
-    // Check if billing row exists
     var bRow = findRowByValue("Billing", S_PATIENT, name);
     var startDate = parseDate(m.startDate) || parseDate(m.purchaseDate) || new Date();
     var contractEnd = parseDate(m.contractEnd) || "";
@@ -2133,18 +2135,26 @@ function handleImportMemberships(data) {
     var plan = m.plan || "";
     var status = m.status || "Active";
 
-    // Map JaneApp status
     if (status === "Expired") status = "Expired";
     else if (status === "Cancelled") status = "Cancelled";
     else status = "Active";
 
+    // Look up rate from Settings
+    var rate = lookupRate(plan, rateMap);
+
+    // Calculate term from start date to contract end
+    var term = 0;
+    if (contractEnd && startDate) {
+      var months = (contractEnd.getFullYear() - startDate.getFullYear()) * 12 + (contractEnd.getMonth() - startDate.getMonth());
+      if (months > 0) term = months;
+    }
+
     if (bRow === -1) {
-      // Create new billing row
       sheet.appendRow([
         name,
         plan,
-        0, // rate — not in membership CSV
-        0, // term
+        rate,
+        term,
         startDate,
         "", // last payment
         contractEnd,
@@ -2156,15 +2166,28 @@ function handleImportMemberships(data) {
         "", // next pay due
         ""  // notes
       ]);
+
+      // Also update patient record with plan and rate
+      var pSheet = getSheet("Patients");
+      pSheet.getRange(pRow, P_PLAN + 1).setValue(plan);
+      pSheet.getRange(pRow, P_RATE + 1).setValue(rate);
+
       added++;
     } else {
-      // Update existing billing row
       sheet.getRange(bRow, S_PLAN + 1).setValue(plan);
+      sheet.getRange(bRow, S_RATE + 1).setValue(rate);
+      sheet.getRange(bRow, S_TERM + 1).setValue(term);
       sheet.getRange(bRow, S_MEMSTART + 1).setValue(startDate);
       sheet.getRange(bRow, S_CONTEND + 1).setValue(contractEnd);
       sheet.getRange(bRow, S_CYCLES + 1).setValue(cyclesLeft);
       sheet.getRange(bRow, S_OUTSTANDING + 1).setValue(outstanding);
       sheet.getRange(bRow, S_STATUS + 1).setValue(status);
+
+      // Also update patient record
+      var pSheet2 = getSheet("Patients");
+      pSheet2.getRange(pRow, P_PLAN + 1).setValue(plan);
+      pSheet2.getRange(pRow, P_RATE + 1).setValue(rate);
+
       updated++;
     }
   }
@@ -2175,6 +2198,42 @@ function handleImportMemberships(data) {
     updated: updated,
     skipped: skipped
   });
+}
+
+// Look up membership rates from Settings tab
+function getMembershipRates() {
+  var settings = getSheetData("Settings");
+  var rates = {};
+  for (var i = 0; i < settings.length; i++) {
+    var key = safeString(settings[i][0]).trim();
+    var val = safeNumber(settings[i][1]);
+    if (val > 0) {
+      rates[key.toLowerCase()] = val;
+    }
+  }
+  return rates;
+}
+
+function lookupRate(plan, rateMap) {
+  if (!plan) return 0;
+  var planLower = plan.toLowerCase();
+
+  // Direct match first
+  if (rateMap[planLower]) return rateMap[planLower];
+
+  // Fuzzy match — check if any setting key is contained in the plan name or vice versa
+  var keys = Object.keys(rateMap);
+  for (var i = 0; i < keys.length; i++) {
+    if (planLower.indexOf(keys[i]) !== -1 || keys[i].indexOf(planLower) !== -1) {
+      return rateMap[keys[i]];
+    }
+  }
+
+  // Check common keywords
+  if (planLower.indexOf("family") !== -1) return rateMap["family rate"] || 50;
+  if (planLower.indexOf("sponsored") !== -1 && planLower.indexOf("test") !== -1) return rateMap["sponsored testosterone"] || 140;
+
+  return 0;
 }
 
 
