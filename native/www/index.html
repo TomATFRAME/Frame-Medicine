@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080808">
+<title>FRAME Medicine</title>
+<link rel="manifest" href="https://framemedicine.com/wp-content/uploads/manifest.json">
+<link rel="apple-touch-icon" href="https://framemedicine.com/wp-content/uploads/2025/08/Untitled-design.png">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:#080808;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;
+  min-height:100vh;min-height:100dvh;overscroll-behavior:none}
+body{padding-bottom:calc(80px + env(safe-area-inset-bottom,20px))}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+
+/* Layout */
+.app-wrap{max-width:430px;margin:0 auto;padding:0 16px}
+.screen{display:none}
+.screen.active{display:block}
+
+/* Typography */
+h1,h2,h3{font-family:'Barlow Condensed',sans-serif;font-weight:800;
+  text-transform:uppercase;letter-spacing:0.02em;color:#fff}
+h1{font-size:24px}
+h2{font-size:18px}
+h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
+
+/* Eyebrow */
+.eyebrow{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:0.22em;text-transform:uppercase;color:#E8891A;
+  display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.eyebrow::before{content:'';width:24px;height:2px;background:#E8891A;flex-shrink:0}
+
+/* Cards */
+.card{background:#131313;border:1px solid rgba(255,255,255,0.06);
+  border-radius:6px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden}
+.card-accent{position:absolute;top:0;left:0;right:0;height:3px;background:#E8891A}
+
+/* Buttons */
+.btn{all:unset;display:inline-flex;align-items:center;justify-content:center;
+  padding:12px 24px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;
+  font-size:14px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;
+  cursor:pointer;transition:opacity 0.2s;text-align:center}
+.btn:active{opacity:0.7}
+.btn-orange{background:#E8891A;color:#fff}
+.btn-green{background:#2D5A27;color:#fff;border:1px solid rgba(45,90,39,0.5)}
+.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.12);
+  color:rgba(255,255,255,0.6)}
+.btn-sm{padding:8px 16px;font-size:11px;letter-spacing:0.14em}
+.btn-block{width:100%;display:flex}
+
+/* Badges */
+.badge{display:inline-block;padding:4px 10px;border-radius:4px;font-size:11px;
+  font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  font-family:'Barlow Condensed',sans-serif}
+.badge-alert{background:rgba(204,0,0,0.15);color:#ff4444;border:1px solid rgba(204,0,0,0.4)}
+.badge-warn{background:rgba(232,137,26,0.15);color:#E8891A;border:1px solid rgba(232,137,26,0.4)}
+.badge-ok{background:rgba(45,90,39,0.15);color:#4CAF50;border:1px solid rgba(45,90,39,0.4)}
+
+/* Input */
+.input-field{all:unset;width:100%;padding:12px 14px;background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.18);border-radius:6px;color:#fff;
+  font-family:'Barlow',sans-serif;font-size:14px;-webkit-text-fill-color:#fff}
+.input-field:focus{border-color:#E8891A;background:rgba(232,137,26,0.07)}
+.input-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.6);
+  margin-bottom:6px;display:block}
+.input-group{margin-bottom:14px}
+
+/* Supply bar */
+.supply-track{width:100%;height:6px;background:rgba(255,255,255,0.08);
+  border-radius:3px;overflow:hidden}
+.supply-fill{height:100%;border-radius:3px;
+  background:linear-gradient(90deg,#2D5A27,#4CAF50);transition:width 0.5s}
+.supply-labels{display:flex;justify-content:space-between;margin-top:6px}
+.supply-label{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;
+  color:rgba(255,255,255,0.35)}
+
+/* Quick action grid */
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.action-btn{all:unset;background:#131313;border:1px solid rgba(255,255,255,0.06);
+  border-radius:8px;padding:16px 12px;text-align:center;cursor:pointer;
+  transition:border-color 0.2s}
+.action-btn:active{border-color:#E8891A}
+.action-icon{font-size:24px;margin-bottom:6px}
+.action-label{font-family:'Barlow Condensed',sans-serif;font-size:12px;
+  font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(255,255,255,0.6)}
+
+/* Bottom nav */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#0a0a0a;
+  border-top:1px solid rgba(255,255,255,0.06);
+  padding:8px 0 calc(8px + env(safe-area-inset-bottom,20px));z-index:100}
+.nav-inner{max-width:430px;margin:0 auto;display:flex;justify-content:space-around}
+.nav-item{all:unset;display:flex;flex-direction:column;align-items:center;
+  gap:4px;cursor:pointer;position:relative;padding:4px 12px}
+.nav-dot{width:4px;height:4px;border-radius:50%;background:transparent}
+.nav-item.active .nav-dot{background:#E8891A}
+.nav-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;
+  font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(255,255,255,0.28)}
+.nav-item.active .nav-label{color:#E8891A}
+.nav-icon{font-size:20px;color:rgba(255,255,255,0.28)}
+.nav-item.active .nav-icon{color:#E8891A}
+.nav-badge{position:absolute;top:0;right:4px;background:#ff4444;color:#fff;
+  font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+/* Chat */
+.chat-container{display:flex;flex-direction:column;gap:8px;padding-bottom:70px}
+.chat-bubble{max-width:80%;padding:10px 14px;border-radius:12px;font-size:13px;
+  line-height:1.4;word-wrap:break-word}
+.chat-inbound{background:#1a1a1a;align-self:flex-start;border-bottom-left-radius:4px}
+.chat-outbound{background:rgba(232,137,26,0.15);align-self:flex-end;border-bottom-right-radius:4px}
+.chat-time{font-size:10px;color:rgba(255,255,255,0.35);margin-top:4px}
+.chat-input-wrap{position:fixed;bottom:calc(72px + env(safe-area-inset-bottom,20px));
+  left:0;right:0;padding:10px 16px;background:#080808;border-top:1px solid rgba(255,255,255,0.06)}
+.chat-input-inner{max-width:430px;margin:0 auto;display:flex;gap:8px}
+.chat-input{all:unset;flex:1;padding:10px 14px;background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.18);border-radius:20px;color:#fff;
+  font-family:'Barlow',sans-serif;font-size:14px;-webkit-text-fill-color:#fff}
+.chat-send{all:unset;width:40px;height:40px;background:#E8891A;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+
+/* Weight chart */
+.chart-wrap{position:relative;height:140px;display:flex;align-items:flex-end;
+  gap:6px;padding:0 4px}
+.chart-bar{flex:1;background:linear-gradient(180deg,#E8891A,rgba(232,137,26,0.3));
+  border-radius:3px 3px 0 0;min-height:4px;position:relative;transition:height 0.3s}
+.chart-val{position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  font-size:10px;color:rgba(255,255,255,0.6);white-space:nowrap;
+  font-family:'Barlow Condensed',sans-serif}
+
+/* Checklist */
+.check-item{display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.06)}
+.check-box{all:unset;width:22px;height:22px;border:2px solid rgba(255,255,255,0.18);
+  border-radius:4px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:all 0.2s}
+.check-box.checked{background:#E8891A;border-color:#E8891A}
+.check-box.checked::after{content:'\2713';color:#fff;font-size:14px;font-weight:bold}
+.check-label{font-size:13px;color:rgba(255,255,255,0.8)}
+
+/* Weight input */
+.weight-input-wrap{display:flex;align-items:center;justify-content:center;gap:16px;margin:20px 0}
+.weight-btn{all:unset;width:48px;height:48px;border-radius:50%;
+  background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  font-size:24px;color:#E8891A;font-weight:bold}
+.weight-display{font-family:'Barlow Condensed',sans-serif;font-size:48px;
+  font-weight:800;color:#fff;min-width:120px;text-align:center}
+.weight-unit{font-size:16px;color:rgba(255,255,255,0.35);font-weight:400}
+
+/* Rating */
+.rating-wrap{display:flex;gap:6px;flex-wrap:wrap}
+.rating-btn{all:unset;width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  font-size:14px;font-weight:600;color:rgba(255,255,255,0.6);transition:all 0.2s}
+.rating-btn.selected{background:#E8891A;border-color:#E8891A;color:#fff}
+
+/* Loading */
+.loader{display:flex;justify-content:center;padding:40px}
+.spinner{width:32px;height:32px;border:3px solid rgba(255,255,255,0.1);
+  border-top-color:#E8891A;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);
+  background:#2D5A27;color:#fff;padding:12px 24px;border-radius:8px;
+  font-size:13px;font-weight:600;z-index:200;opacity:0;transition:opacity 0.3s;
+  pointer-events:none;max-width:90%}
+.toast.show{opacity:1}
+
+/* Install banner */
+.install-banner{position:fixed;bottom:80px;left:16px;right:16px;
+  background:#131313;border:1px solid rgba(232,137,26,0.3);border-radius:12px;
+  padding:16px;z-index:150;display:none;max-width:400px;margin:0 auto}
+.install-close{position:absolute;top:8px;right:12px;background:none;border:none;
+  color:rgba(255,255,255,0.35);font-size:20px;cursor:pointer}
+
+/* Refill card */
+.refill-status{display:flex;align-items:center;gap:12px;margin:16px 0}
+.refill-dot{width:10px;height:10px;border-radius:50%}
+.refill-text{font-size:13px;color:rgba(255,255,255,0.6)}
+
+/* Textarea */
+.textarea-field{all:unset;width:100%;padding:12px 14px;background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.18);border-radius:6px;color:#fff;
+  font-family:'Barlow',sans-serif;font-size:14px;min-height:80px;resize:vertical;
+  -webkit-text-fill-color:#fff;display:block}
+.textarea-field:focus{border-color:#E8891A;background:rgba(232,137,26,0.07)}
+
+/* Header */
+.app-header{padding:16px 0 8px;display:flex;align-items:center;justify-content:space-between}
+.header-logo{height:28px}
+.header-right{display:flex;align-items:center;gap:12px}
+
+/* Spacing */
+.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
+.mt-24{margin-top:24px}.mb-8{margin-bottom:8px}.mb-16{margin-bottom:16px}
+.text-muted{color:rgba(255,255,255,0.6)}
+.text-sm{font-size:12px}
+.text-xs{font-size:10px}
+.text-center{text-align:center}
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+.gap-8{gap:8px}
+</style>
+</head>
+<body>
+
+<div class="app-wrap">
+
+<!-- ====== LOGIN SCREEN ====== -->
+<div id="screen-login" class="screen active">
+  <div style="padding-top:80px;text-align:center">
+    <img src="https://framemedicine.com/wp-content/uploads/2025/08/Untitled-design.png"
+         alt="FRAME Medicine" style="height:48px;margin-bottom:32px">
+    <h1 style="margin-bottom:8px">Welcome Back</h1>
+    <p class="text-muted" style="margin-bottom:32px">Enter your phone number to sign in</p>
+
+    <div id="login-step1">
+      <div class="input-group">
+        <label class="input-label">Phone Number</label>
+        <input type="tel" id="login-phone" class="input-field" placeholder="(904) 555-1234">
+      </div>
+      <button class="btn btn-orange btn-block" onclick="requestOtp()">Send Code</button>
+    </div>
+
+    <div id="login-step2" style="display:none">
+      <p class="text-muted mb-16">We sent a 6-digit code to <span id="login-phone-display"></span></p>
+      <div class="input-group">
+        <label class="input-label">Verification Code</label>
+        <input type="text" id="login-code" class="input-field" placeholder="000000"
+               maxlength="6" inputmode="numeric" style="text-align:center;font-size:24px;letter-spacing:0.3em">
+      </div>
+      <button class="btn btn-orange btn-block" onclick="verifyOtp()">Verify</button>
+      <button class="btn btn-ghost btn-block mt-12" onclick="showLoginStep1()">Use Different Number</button>
+    </div>
+
+    <div id="login-biometric" style="display:none;margin-top:24px">
+      <div style="width:100%;height:1px;background:rgba(255,255,255,0.1);margin-bottom:24px"></div>
+      <button class="btn btn-ghost btn-block" onclick="biometricLogin()" id="biometric-btn">
+        <span style="font-size:20px;margin-right:8px">&#128274;</span> Sign in with Face ID / Fingerprint
+      </button>
+    </div>
+
+    <div id="login-error" style="color:#ff4444;margin-top:16px;display:none"></div>
+    <div id="login-loading" class="loader" style="display:none"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- Biometric enrollment modal -->
+<div id="biometric-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center">
+  <div style="max-width:340px;padding:32px;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">&#128274;</div>
+    <h2 style="margin-bottom:8px">Enable Quick Sign In</h2>
+    <p class="text-muted" style="margin-bottom:24px">Use Face ID or fingerprint to sign in instantly next time — no verification code needed.</p>
+    <button class="btn btn-orange btn-block" onclick="enrollBiometric()">Enable</button>
+    <button class="btn btn-ghost btn-block mt-12" onclick="dismissBiometric()">Not Now</button>
+  </div>
+</div>
+
+<!-- ====== HOME SCREEN ====== -->
+<div id="screen-home" class="screen">
+  <div class="app-header">
+    <img src="https://framemedicine.com/wp-content/uploads/2025/08/Untitled-design.png"
+         alt="FRAME" class="header-logo">
+    <div class="header-right">
+      <button class="btn btn-ghost btn-sm" onclick="logout()" style="font-size:10px">Sign Out</button>
+    </div>
+  </div>
+
+  <h1 id="home-greeting" style="margin-top:8px"></h1>
+  <p class="text-muted" id="home-date"></p>
+
+  <!-- Medication Card -->
+  <div class="card mt-16" id="home-med-card">
+    <div class="card-accent"></div>
+    <div class="eyebrow">Current Medication</div>
+    <h2 id="home-med-name"></h2>
+    <div class="flex-between mt-8">
+      <span class="text-muted text-sm" id="home-med-dose"></span>
+      <span class="text-muted text-sm" id="home-med-plan"></span>
+    </div>
+    <div class="mt-12">
+      <div class="supply-track">
+        <div class="supply-fill" id="home-supply-fill"></div>
+      </div>
+      <div class="supply-labels">
+        <span class="supply-label" id="home-supply-days"></span>
+        <span class="supply-label" id="home-supply-next"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="action-grid">
+    <button class="action-btn" onclick="showScreen('refill')">
+      <div class="action-icon">&#x1F48A;</div>
+      <div class="action-label">Refill</div>
+    </button>
+    <button class="action-btn" onclick="showScreen('checkin')">
+      <div class="action-icon">&#x2705;</div>
+      <div class="action-label">Check-In</div>
+    </button>
+    <button class="action-btn" onclick="showScreen('weight')">
+      <div class="action-icon">&#x2696;</div>
+      <div class="action-label">Log Weight</div>
+    </button>
+    <button class="action-btn" onclick="showScreen('messages')">
+      <div class="action-icon">&#x1F4AC;</div>
+      <div class="action-label">Messages</div>
+      <span id="home-msg-badge" class="nav-badge" style="display:none;position:absolute;top:4px;right:4px"></span>
+    </button>
+  </div>
+
+  <!-- Weight Chart -->
+  <div class="card" id="home-weight-section" style="display:none">
+    <div class="card-accent"></div>
+    <div class="eyebrow">Weight Progress</div>
+    <div class="chart-wrap" id="home-weight-chart"></div>
+  </div>
+
+  <!-- Last Check-In -->
+  <div class="card" id="home-checkin-section" style="display:none">
+    <div class="card-accent"></div>
+    <div class="eyebrow">Last Check-In</div>
+    <div class="flex-between">
+      <span id="home-checkin-date" class="text-muted text-sm"></span>
+      <span id="home-checkin-rating" class="badge badge-ok"></span>
+    </div>
+    <p class="text-sm mt-8" id="home-checkin-symptoms" style="color:rgba(255,255,255,0.6)"></p>
+  </div>
+
+  <!-- Labs -->
+  <div class="card" id="home-labs-section" style="display:none">
+    <div class="card-accent"></div>
+    <div class="eyebrow">Labs</div>
+    <div class="flex-between">
+      <span class="text-sm" id="home-labs-type"></span>
+      <span id="home-labs-badge" class="badge"></span>
+    </div>
+    <p class="text-muted text-sm mt-4" id="home-labs-due"></p>
+  </div>
+</div>
+
+<!-- ====== REFILL SCREEN ====== -->
+<div id="screen-refill" class="screen">
+  <div class="app-header">
+    <button class="btn btn-ghost btn-sm" onclick="showScreen('home')">&#8592; Back</button>
+  </div>
+  <h1>Refill</h1>
+
+  <div class="card mt-16">
+    <div class="card-accent"></div>
+    <div class="eyebrow">Current Medication</div>
+    <h2 id="refill-med-name"></h2>
+    <p class="text-muted text-sm mt-4" id="refill-dose"></p>
+    <div class="refill-status">
+      <div class="refill-dot" id="refill-dot"></div>
+      <span class="refill-text" id="refill-status-text"></span>
+    </div>
+  </div>
+
+  <div id="refill-actions" class="mt-16">
+    <button class="btn btn-green btn-block mb-16" onclick="confirmRefill()">Confirm Refill</button>
+    <button class="btn btn-ghost btn-block" onclick="showDeclineForm()">I Don't Need a Refill</button>
+  </div>
+
+  <div id="refill-decline-form" style="display:none" class="mt-16">
+    <div class="input-group">
+      <label class="input-label">Reason (optional)</label>
+      <textarea id="refill-decline-reason" class="textarea-field" placeholder="Tell us why..."></textarea>
+    </div>
+    <button class="btn btn-orange btn-block" onclick="declineRefill()">Submit</button>
+  </div>
+
+  <div id="refill-confirmation" style="display:none" class="text-center mt-24">
+    <div style="font-size:48px;margin-bottom:16px">&#x2705;</div>
+    <h2>Confirmed!</h2>
+    <p class="text-muted mt-8">Your care team has been notified.</p>
+  </div>
+</div>
+
+<!-- ====== CHECK-IN SCREEN ====== -->
+<div id="screen-checkin" class="screen">
+  <div class="app-header">
+    <button class="btn btn-ghost btn-sm" onclick="showScreen('home')">&#8592; Back</button>
+  </div>
+  <h1>Monthly Check-In</h1>
+  <p class="text-muted mt-4" id="checkin-med-label"></p>
+
+  <div class="mt-16">
+    <div class="eyebrow">How are you feeling?</div>
+    <div id="checkin-symptoms" class="mt-8"></div>
+  </div>
+
+  <div class="mt-24">
+    <div class="eyebrow">Overall Rating</div>
+    <div class="rating-wrap mt-8" id="checkin-rating"></div>
+  </div>
+
+  <div class="input-group mt-24">
+    <label class="input-label">Notes (optional)</label>
+    <textarea id="checkin-notes" class="textarea-field" placeholder="Anything else you want us to know?"></textarea>
+  </div>
+
+  <div class="check-item mt-8" style="border:none">
+    <button class="check-box" id="checkin-response-box" onclick="toggleResponseRequest()"></button>
+    <span class="check-label">I'd like a response from my provider</span>
+  </div>
+
+  <button class="btn btn-green btn-block mt-16" onclick="submitCheckIn()">Submit Check-In</button>
+</div>
+
+<!-- ====== WEIGHT SCREEN ====== -->
+<div id="screen-weight" class="screen">
+  <div class="app-header">
+    <button class="btn btn-ghost btn-sm" onclick="showScreen('home')">&#8592; Back</button>
+  </div>
+  <h1>Log Weight</h1>
+
+  <div class="input-group mt-16">
+    <label class="input-label">Date</label>
+    <input type="date" id="weight-date" class="input-field">
+  </div>
+
+  <div class="card mt-8" id="weight-last-card" style="display:none">
+    <div class="flex-between">
+      <div>
+        <span class="text-muted text-xs">LAST WEIGHT</span>
+        <h2 id="weight-last-val"></h2>
+      </div>
+      <div style="text-align:right">
+        <span class="text-muted text-xs">CHANGE</span>
+        <h3 id="weight-last-change"></h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="weight-input-wrap">
+    <button class="weight-btn" onclick="adjustWeight(-0.5)">-</button>
+    <div>
+      <span class="weight-display" id="weight-value">180</span>
+      <span class="weight-unit"> lbs</span>
+    </div>
+    <button class="weight-btn" onclick="adjustWeight(0.5)">+</button>
+  </div>
+
+  <button class="btn btn-green btn-block" onclick="submitWeight()">Log Weight</button>
+
+  <div class="card mt-24" id="weight-chart-section" style="display:none">
+    <div class="eyebrow">Recent Trend</div>
+    <div class="chart-wrap" id="weight-chart-detail"></div>
+  </div>
+</div>
+
+<!-- ====== MESSAGES SCREEN ====== -->
+<div id="screen-messages" class="screen">
+  <div class="app-header">
+    <button class="btn btn-ghost btn-sm" onclick="showScreen('home')">&#8592; Back</button>
+    <h2>Messages</h2>
+    <div style="width:60px"></div>
+  </div>
+
+  <div class="chat-container" id="messages-list"></div>
+
+  <div class="chat-input-wrap">
+    <div class="chat-input-inner">
+      <input type="text" class="chat-input" id="message-input" placeholder="Type a message...">
+      <button class="chat-send" onclick="sendPatientMessage()">
+        <span style="color:#fff;font-size:18px">&#10148;</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+</div><!-- end app-wrap -->
+
+<!-- Bottom Nav -->
+<div class="bottom-nav" id="bottom-nav" style="display:none">
+  <div class="nav-inner">
+    <button class="nav-item active" onclick="navTo('home')" id="nav-home">
+      <span class="nav-icon">&#x1F3E0;</span>
+      <span class="nav-dot"></span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" onclick="navTo('refill')" id="nav-refill">
+      <span class="nav-icon">&#x1F48A;</span>
+      <span class="nav-dot"></span>
+      <span class="nav-label">Refill</span>
+    </button>
+    <button class="nav-item" onclick="navTo('checkin')" id="nav-checkin">
+      <span class="nav-icon">&#x2705;</span>
+      <span class="nav-dot"></span>
+      <span class="nav-label">Check-In</span>
+    </button>
+    <button class="nav-item" onclick="navTo('weight')" id="nav-weight">
+      <span class="nav-icon">&#x2696;</span>
+      <span class="nav-dot"></span>
+      <span class="nav-label">Weight</span>
+    </button>
+    <button class="nav-item" onclick="navTo('messages')" id="nav-messages">
+      <span class="nav-icon">&#x1F4AC;</span>
+      <span class="nav-dot"></span>
+      <span class="nav-label">Messages</span>
+      <span id="nav-msg-badge" class="nav-badge" style="display:none"></span>
+    </button>
+  </div>
+</div>
+
+<!-- Install Banner -->
+<div class="install-banner" id="install-banner">
+  <button class="install-close" onclick="dismissInstall()">&#10005;</button>
+  <div class="eyebrow">Install FRAME</div>
+  <p class="text-sm mb-16" style="color:rgba(255,255,255,0.6)">
+    Add FRAME Medicine to your home screen for quick access and notifications.
+  </p>
+  <button class="btn btn-orange btn-block btn-sm" id="install-btn" onclick="installApp()">
+    Install App
+  </button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================
+// FRAME Medicine — Patient App
+// No && anywhere. var only in Apps Script,
+// but this is browser JS so modern syntax is OK
+// EXCEPT no && — use if statements instead.
+// ============================================
+
+var API_URL = "https://script.google.com/macros/s/AKfycbzdSURMk8BPC7cQpHjuQ6y_xLcnFrAW4kQfV9j5Lvv_ute8JTqyvsjjKWAI_uIDXRon/exec";
+var currentPatient = null;
+var currentScreen = "login";
+var deferredInstallPrompt = null;
+var messagePollingInterval = null;
+var weightValue = 180;
+var responseRequested = false;
+var selectedSymptoms = [];
+var selectedRating = null;
+
+// ---- INIT ----
+(function init() {
+  var saved = localStorage.getItem("frame_phone");
+  if (saved) {
+    showLoading(true);
+    apiGet("getPatientDashboard", { phone: saved }, function(data) {
+      showLoading(false);
+      if (data.success) {
+        currentPatient = data.patient;
+        renderDashboard(data);
+        showScreen("home");
+        document.getElementById("bottom-nav").style.display = "block";
+        checkInstallPrompt();
+      } else {
+        localStorage.removeItem("frame_phone");
+      }
+    });
+  }
+
+  // Register service worker
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(function(err) {
+      console.log("SW registration failed:", err);
+    });
+  }
+
+  // Capture install prompt
+  window.addEventListener("beforeinstallprompt", function(e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+  });
+})();
+
+
+// ---- API HELPERS ----
+function apiGet(action, params, callback) {
+  params.action = action;
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(params)
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) { callback(data); })
+    .catch(function(err) { callback({ success: false, error: err.message }); });
+}
+
+function apiPost(action, body, callback) {
+  body.action = action;
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(body)
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) { callback(data); })
+    .catch(function(err) { callback({ success: false, error: err.message }); });
+}
+
+function showLoading(show) {
+  var el = document.getElementById("login-loading");
+  if (el) el.style.display = show ? "flex" : "none";
+}
+
+function showToast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 3000);
+}
+
+
+// ---- LOGIN ----
+function requestOtp() {
+  var phone = document.getElementById("login-phone").value.trim();
+  if (!phone) return;
+  document.getElementById("login-error").style.display = "none";
+  showLoading(true);
+  apiGet("login", { phone: phone }, function(data) {
+    showLoading(false);
+    if (data.success) {
+      document.getElementById("login-step1").style.display = "none";
+      document.getElementById("login-step2").style.display = "block";
+      document.getElementById("login-phone-display").textContent = phone;
+    } else {
+      document.getElementById("login-error").textContent = data.error || "Failed to send code";
+      document.getElementById("login-error").style.display = "block";
+    }
+  });
+}
+
+function verifyOtp() {
+  var phone = document.getElementById("login-phone").value.trim();
+  var code = document.getElementById("login-code").value.trim();
+  if (!code) return;
+  showLoading(true);
+  apiGet("verifyOtp", { phone: phone, code: code }, function(data) {
+    showLoading(false);
+    if (data.success) {
+      if (data.verified) {
+        localStorage.setItem("frame_phone", data.patient.phone);
+        currentPatient = data.patient;
+        // Load full dashboard
+        apiGet("getPatientDashboard", { phone: data.patient.phone }, function(dashData) {
+          if (dashData.success) {
+            renderDashboard(dashData);
+          }
+          showScreen("home");
+          document.getElementById("bottom-nav").style.display = "block";
+          requestPushPermission();
+          checkInstallPrompt();
+          promptBiometricIfAvailable();
+        });
+      }
+    } else {
+      document.getElementById("login-error").textContent = data.error || "Invalid code";
+      document.getElementById("login-error").style.display = "block";
+    }
+  });
+}
+
+function showLoginStep1() {
+  document.getElementById("login-step1").style.display = "block";
+  document.getElementById("login-step2").style.display = "none";
+}
+
+function logout() {
+  var phone = localStorage.getItem("frame_phone");
+  var token = localStorage.getItem("frame_bio_token");
+  // Revoke token server-side so a stolen token is useless
+  if (phone && token) {
+    apiPost("revokeBiometric", { phone: phone }, function() {});
+  }
+  localStorage.removeItem("frame_phone");
+  localStorage.removeItem("frame_bio_cred");
+  localStorage.removeItem("frame_bio_token");
+  localStorage.removeItem("frame_bio_dismissed");
+  currentPatient = null;
+  if (messagePollingInterval) clearInterval(messagePollingInterval);
+  document.getElementById("bottom-nav").style.display = "none";
+  document.getElementById("login-biometric").style.display = "none";
+  showScreen("login");
+}
+
+
+// ---- NAVIGATION ----
+function showScreen(name) {
+  var screens = document.querySelectorAll(".screen");
+  for (var i = 0; i < screens.length; i++) {
+    screens[i].classList.remove("active");
+  }
+  document.getElementById("screen-" + name).classList.add("active");
+  currentScreen = name;
+  updateNav(name);
+
+  if (name === "messages") {
+    loadMessages();
+    startMessagePolling();
+  } else {
+    stopMessagePolling();
+  }
+  if (name === "home") {
+    if (currentPatient) refreshDashboard();
+  }
+  if (name === "checkin") {
+    setupCheckIn();
+  }
+  if (name === "refill") {
+    setupRefill();
+  }
+  if (name === "weight") {
+    setupWeight();
+  }
+  window.scrollTo(0, 0);
+}
+
+function navTo(name) {
+  showScreen(name);
+}
+
+function updateNav(active) {
+  var items = document.querySelectorAll(".nav-item");
+  for (var i = 0; i < items.length; i++) {
+    items[i].classList.remove("active");
+  }
+  var el = document.getElementById("nav-" + active);
+  if (el) el.classList.add("active");
+}
+
+
+// ---- DASHBOARD RENDERING ----
+function renderDashboard(data) {
+  var p = data.patient;
+  currentPatient = p;
+  var preferred = p.preferredName || p.name.split(" ")[0];
+  var hour = new Date().getHours();
+  var greeting = "Good morning";
+  if (hour >= 12) greeting = "Good afternoon";
+  if (hour >= 17) greeting = "Good evening";
+  document.getElementById("home-greeting").textContent = greeting + ", " + preferred;
+  document.getElementById("home-date").textContent = new Date().toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric"
+  });
+
+  // Medication card
+  document.getElementById("home-med-name").textContent = p.medication || "No medication assigned";
+  document.getElementById("home-med-dose").textContent = p.plan || "";
+  document.getElementById("home-med-plan").textContent = "$" + (p.rate || 0) + "/mo";
+
+  // Supply bar
+  var supply = data.supply || {};
+  var daysLeft = supply.daysLeft || 0;
+  var totalDays = supply.totalDays || 1;
+  if (daysLeft < 0) daysLeft = 0;
+  var pct = Math.min(100, Math.round((daysLeft / totalDays) * 100));
+  document.getElementById("home-supply-fill").style.width = pct + "%";
+  if (daysLeft <= 0) {
+    document.getElementById("home-supply-days").textContent = "REFILL NEEDED";
+    document.getElementById("home-supply-fill").style.background = "#ff4444";
+  } else {
+    document.getElementById("home-supply-days").textContent = daysLeft + " days left";
+  }
+  var nextDueText = "";
+  if (supply.lastOrder) {
+    nextDueText = "Next due: " + supply.lastOrder.nextDue;
+  }
+  document.getElementById("home-supply-next").textContent = nextDueText;
+
+  // Weight chart
+  var weights = data.weights || [];
+  if (weights.length > 0) {
+    document.getElementById("home-weight-section").style.display = "block";
+    renderWeightChart("home-weight-chart", weights.slice(0, 8).reverse());
+    weightValue = weights[0].weight;
+  }
+
+  // Last check-in
+  var lastCI = data.lastCheckIn;
+  if (lastCI) {
+    document.getElementById("home-checkin-section").style.display = "block";
+    document.getElementById("home-checkin-date").textContent = lastCI.date;
+    document.getElementById("home-checkin-rating").textContent = "Rating: " + (lastCI.rating || "N/A");
+    document.getElementById("home-checkin-symptoms").textContent = lastCI.symptoms || "No symptoms reported";
+  }
+
+  // Labs
+  var labs = data.labs;
+  if (labs) {
+    if (labs.nextDue) {
+      document.getElementById("home-labs-section").style.display = "block";
+      var labDays = daysBetween(new Date(), new Date(labs.nextDue));
+      var labType = "Labs";
+      if (!labs.initialDone) labType = "Initial Labs";
+      else if (!labs.ninetyDone) labType = "90-Day Labs";
+      else if (!labs.oneEightyDone) labType = "180-Day Labs";
+      else labType = "Annual Labs";
+      document.getElementById("home-labs-type").textContent = labType;
+      document.getElementById("home-labs-due").textContent = "Due: " + labs.nextDue;
+      var labBadge = document.getElementById("home-labs-badge");
+      if (labDays < 0) {
+        labBadge.textContent = Math.abs(labDays) + "d overdue";
+        labBadge.className = "badge badge-alert";
+      } else if (labDays <= 30) {
+        labBadge.textContent = labDays + "d left";
+        labBadge.className = "badge badge-warn";
+      } else {
+        labBadge.textContent = "On Track";
+        labBadge.className = "badge badge-ok";
+      }
+    }
+  }
+
+  // Unread messages
+  var unread = data.unreadMessages || 0;
+  if (unread > 0) {
+    document.getElementById("home-msg-badge").textContent = unread;
+    document.getElementById("home-msg-badge").style.display = "flex";
+    document.getElementById("nav-msg-badge").textContent = unread;
+    document.getElementById("nav-msg-badge").style.display = "flex";
+  } else {
+    document.getElementById("home-msg-badge").style.display = "none";
+    document.getElementById("nav-msg-badge").style.display = "none";
+  }
+}
+
+function refreshDashboard() {
+  if (!currentPatient) return;
+  apiGet("getPatientDashboard", { phone: currentPatient.phone }, function(data) {
+    if (data.success) renderDashboard(data);
+  });
+}
+
+
+// ---- WEIGHT CHART ----
+function renderWeightChart(containerId, weights) {
+  var container = document.getElementById(containerId);
+  container.innerHTML = "";
+  if (weights.length === 0) return;
+  var min = Infinity, max = -Infinity;
+  for (var i = 0; i < weights.length; i++) {
+    if (weights[i].weight < min) min = weights[i].weight;
+    if (weights[i].weight > max) max = weights[i].weight;
+  }
+  var range = max - min;
+  if (range === 0) range = 10;
+  for (var j = 0; j < weights.length; j++) {
+    var pct = ((weights[j].weight - min) / range) * 80 + 20;
+    var bar = document.createElement("div");
+    bar.className = "chart-bar";
+    bar.style.height = pct + "%";
+    var val = document.createElement("div");
+    val.className = "chart-val";
+    val.textContent = weights[j].weight;
+    bar.appendChild(val);
+    container.appendChild(bar);
+  }
+}
+
+
+// ---- REFILL ----
+function setupRefill() {
+  if (!currentPatient) return;
+  document.getElementById("refill-med-name").textContent = currentPatient.medication || "N/A";
+  document.getElementById("refill-dose").textContent = currentPatient.plan || "";
+  document.getElementById("refill-actions").style.display = "block";
+  document.getElementById("refill-decline-form").style.display = "none";
+  document.getElementById("refill-confirmation").style.display = "none";
+
+  // Supply status
+  apiGet("getPatientDashboard", { phone: currentPatient.phone }, function(data) {
+    if (!data.success) return;
+    var daysLeft = data.supply ? data.supply.daysLeft : 0;
+    var dot = document.getElementById("refill-dot");
+    var text = document.getElementById("refill-status-text");
+    if (daysLeft < 0) {
+      dot.style.background = "#ff4444";
+      text.textContent = "Overdue by " + Math.abs(daysLeft) + " days";
+    } else if (daysLeft <= 14) {
+      dot.style.background = "#E8891A";
+      text.textContent = daysLeft + " days remaining";
+    } else {
+      dot.style.background = "#4CAF50";
+      text.textContent = daysLeft + " days remaining";
+    }
+  });
+}
+
+function confirmRefill() {
+  apiPost("confirmRefill", {
+    patientName: currentPatient.name,
+    medication: currentPatient.medication
+  }, function(data) {
+    document.getElementById("refill-actions").style.display = "none";
+    document.getElementById("refill-confirmation").style.display = "block";
+    showToast("Refill confirmed!");
+  });
+}
+
+function showDeclineForm() {
+  document.getElementById("refill-decline-form").style.display = "block";
+}
+
+function declineRefill() {
+  var reason = document.getElementById("refill-decline-reason").value;
+  apiPost("declineRefill", {
+    patientName: currentPatient.name,
+    medication: currentPatient.medication,
+    reason: reason
+  }, function(data) {
+    document.getElementById("refill-decline-form").style.display = "none";
+    document.getElementById("refill-actions").style.display = "none";
+    showToast("Response recorded. Your team will follow up.");
+  });
+}
+
+
+// ---- CHECK-IN ----
+function setupCheckIn() {
+  if (!currentPatient) return;
+  var med = (currentPatient.medication || "").toLowerCase();
+  document.getElementById("checkin-med-label").textContent = currentPatient.medication || "";
+  selectedSymptoms = [];
+  selectedRating = null;
+  responseRequested = false;
+  document.getElementById("checkin-response-box").classList.remove("checked");
+  document.getElementById("checkin-notes").value = "";
+
+  // Medication-specific symptoms
+  var symptoms = [];
+  if (med.indexOf("test") !== -1 || med.indexOf("trt") !== -1 || med.indexOf("cyp") !== -1) {
+    symptoms = ["Energy", "Mood", "Libido", "Sleep", "Acne", "Hair Loss", "Water Retention"];
+  } else if (med.indexOf("tirz") !== -1) {
+    symptoms = ["Nausea", "Appetite Changes", "Energy", "GI Issues", "Injection Site Reaction"];
+  } else if (med.indexOf("sema") !== -1) {
+    symptoms = ["Nausea", "Appetite Changes", "Energy", "GI Issues", "Injection Site Reaction"];
+  } else if (med.indexOf("tadal") !== -1 || med.indexOf("cialis") !== -1) {
+    symptoms = ["Headache", "Flushing", "Congestion", "Back Pain", "Effectiveness"];
+  } else if (med.indexOf("fina") !== -1 || med.indexOf("hair") !== -1) {
+    symptoms = ["Libido", "Mood", "Scalp Changes", "Shedding"];
+  } else {
+    symptoms = ["Energy", "Mood", "Sleep", "Appetite", "Side Effects"];
+  }
+
+  var container = document.getElementById("checkin-symptoms");
+  container.innerHTML = "";
+  for (var i = 0; i < symptoms.length; i++) {
+    var item = document.createElement("div");
+    item.className = "check-item";
+    var box = document.createElement("button");
+    box.className = "check-box";
+    box.setAttribute("data-symptom", symptoms[i]);
+    box.onclick = function() { toggleSymptom(this); };
+    var label = document.createElement("span");
+    label.className = "check-label";
+    label.textContent = symptoms[i];
+    item.appendChild(box);
+    item.appendChild(label);
+    container.appendChild(item);
+  }
+
+  // Rating buttons 1-10
+  var ratingContainer = document.getElementById("checkin-rating");
+  ratingContainer.innerHTML = "";
+  for (var j = 1; j <= 10; j++) {
+    var btn = document.createElement("button");
+    btn.className = "rating-btn";
+    btn.textContent = j;
+    btn.setAttribute("data-rating", j);
+    btn.onclick = function() { selectRating(this); };
+    ratingContainer.appendChild(btn);
+  }
+}
+
+function toggleSymptom(el) {
+  var symptom = el.getAttribute("data-symptom");
+  if (el.classList.contains("checked")) {
+    el.classList.remove("checked");
+    selectedSymptoms = selectedSymptoms.filter(function(s) { return s !== symptom; });
+  } else {
+    el.classList.add("checked");
+    selectedSymptoms.push(symptom);
+  }
+}
+
+function selectRating(el) {
+  var btns = document.querySelectorAll(".rating-btn");
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.remove("selected");
+  }
+  el.classList.add("selected");
+  selectedRating = el.getAttribute("data-rating");
+}
+
+function toggleResponseRequest() {
+  var box = document.getElementById("checkin-response-box");
+  responseRequested = !responseRequested;
+  if (responseRequested) {
+    box.classList.add("checked");
+  } else {
+    box.classList.remove("checked");
+  }
+}
+
+function submitCheckIn() {
+  if (!selectedRating) {
+    showToast("Please select a rating");
+    return;
+  }
+  apiPost("submitCheckIn", {
+    patientName: currentPatient.name,
+    phone: currentPatient.phone,
+    medication: currentPatient.medication,
+    symptoms: selectedSymptoms.join(", "),
+    rating: selectedRating,
+    notes: document.getElementById("checkin-notes").value,
+    responseRequested: responseRequested
+  }, function(data) {
+    if (data.success) {
+      showToast("Check-in submitted!");
+      showScreen("home");
+    } else {
+      showToast("Error: " + (data.error || "Unknown"));
+    }
+  });
+}
+
+
+// ---- WEIGHT ----
+function setupWeight() {
+  if (!currentPatient) return;
+  // Default date picker to today
+  var today = new Date();
+  var yyyy = today.getFullYear();
+  var mm = String(today.getMonth() + 1).padStart(2, "0");
+  var dd = String(today.getDate()).padStart(2, "0");
+  document.getElementById("weight-date").value = yyyy + "-" + mm + "-" + dd;
+  document.getElementById("weight-value").textContent = weightValue;
+
+  apiGet("getWeightLog", { name: currentPatient.name, limit: "8" }, function(data) {
+    if (!data.success) return;
+    var weights = data.weights || [];
+    if (weights.length > 0) {
+      weightValue = weights[0].weight;
+      document.getElementById("weight-value").textContent = weightValue;
+      document.getElementById("weight-last-card").style.display = "block";
+      document.getElementById("weight-last-val").textContent = weights[0].weight + " lbs";
+      var change = weights[0].change || 0;
+      var changeEl = document.getElementById("weight-last-change");
+      changeEl.textContent = (change >= 0 ? "+" : "") + change + " lbs";
+      if (change < 0) changeEl.style.color = "#4CAF50";
+      else if (change > 0) changeEl.style.color = "#ff4444";
+      else changeEl.style.color = "rgba(255,255,255,0.6)";
+
+      if (weights.length > 1) {
+        document.getElementById("weight-chart-section").style.display = "block";
+        renderWeightChart("weight-chart-detail", weights.slice(0, 8).reverse());
+      }
+    }
+  });
+}
+
+function adjustWeight(delta) {
+  weightValue = Math.round((weightValue + delta) * 10) / 10;
+  if (weightValue < 50) weightValue = 50;
+  if (weightValue > 700) weightValue = 700;
+  document.getElementById("weight-value").textContent = weightValue;
+}
+
+function submitWeight() {
+  var selectedDate = document.getElementById("weight-date").value;
+  apiPost("logWeight", {
+    patientName: currentPatient.name,
+    phone: currentPatient.phone,
+    medication: currentPatient.medication,
+    weight: weightValue,
+    date: selectedDate,
+    source: "app"
+  }, function(data) {
+    if (data.success) {
+      showToast("Weight logged: " + weightValue + " lbs");
+      showScreen("home");
+    } else {
+      showToast("Error: " + (data.error || "Unknown"));
+    }
+  });
+}
+
+
+// ---- MESSAGES ----
+function loadMessages() {
+  if (!currentPatient) return;
+  apiGet("getMessages", { phone: currentPatient.phone }, function(data) {
+    if (!data.success) return;
+    renderMessages(data.messages || []);
+    // Mark as read
+    apiPost("markRead", { phone: currentPatient.phone }, function() {});
+  });
+}
+
+function renderMessages(messages) {
+  var container = document.getElementById("messages-list");
+  container.innerHTML = "";
+  if (messages.length === 0) {
+    container.innerHTML = '<p class="text-center text-muted" style="padding:40px">No messages yet</p>';
+    return;
+  }
+  for (var i = 0; i < messages.length; i++) {
+    var msg = messages[i];
+    var bubble = document.createElement("div");
+    bubble.className = "chat-bubble " + (msg.direction === "inbound" ? "chat-inbound" : "chat-outbound");
+    bubble.textContent = msg.text;
+    var time = document.createElement("div");
+    time.className = "chat-time";
+    time.textContent = msg.timestamp;
+    bubble.appendChild(time);
+    container.appendChild(bubble);
+  }
+  // Scroll to bottom
+  setTimeout(function() {
+    container.scrollTop = container.scrollHeight;
+  }, 100);
+}
+
+function sendPatientMessage() {
+  var input = document.getElementById("message-input");
+  var text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+
+  // Optimistic render
+  var container = document.getElementById("messages-list");
+  var bubble = document.createElement("div");
+  bubble.className = "chat-bubble chat-inbound";
+  bubble.textContent = text;
+  container.appendChild(bubble);
+  container.scrollTop = container.scrollHeight;
+
+  apiPost("sendMessage", {
+    name: currentPatient.name,
+    patientName: currentPatient.name,
+    phone: currentPatient.phone,
+    text: text,
+    source: "app",
+    contactType: "patient"
+  }, function(data) {
+    if (!data.success) {
+      showToast("Failed to send message");
+    }
+  });
+}
+
+function startMessagePolling() {
+  stopMessagePolling();
+  messagePollingInterval = setInterval(function() {
+    if (currentScreen === "messages") {
+      loadMessages();
+    }
+  }, 30000);
+}
+
+function stopMessagePolling() {
+  if (messagePollingInterval) {
+    clearInterval(messagePollingInterval);
+    messagePollingInterval = null;
+  }
+}
+
+
+// ---- PUSH NOTIFICATIONS ----
+function requestPushPermission() {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "granted") {
+    subscribePush();
+    return;
+  }
+  if (Notification.permission !== "denied") {
+    Notification.requestPermission().then(function(permission) {
+      if (permission === "granted") {
+        subscribePush();
+      }
+    });
+  }
+}
+
+function subscribePush() {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.ready.then(function(reg) {
+    return reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array("")
+    });
+  }).then(function(sub) {
+    // Save subscription to backend
+    apiPost("savePushSubscription", {
+      phone: currentPatient.phone,
+      subscription: JSON.stringify(sub)
+    }, function() {});
+  }).catch(function(err) {
+    console.log("Push subscription failed:", err);
+  });
+}
+
+function urlBase64ToUint8Array(base64String) {
+  var padding = "=".repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  var rawData = window.atob(base64);
+  var outputArray = new Uint8Array(rawData.length);
+  for (var i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+
+// ---- INSTALL PROMPT ----
+function checkInstallPrompt() {
+  // Show install banner after 30 seconds if not installed
+  var isInstalled = window.matchMedia("(display-mode: standalone)").matches;
+  if (isInstalled) return;
+  var dismissed = localStorage.getItem("frame_install_dismissed");
+  if (dismissed) return;
+  setTimeout(function() {
+    // Check for iOS
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      if (!navigator.standalone) {
+        document.getElementById("install-btn").textContent = "Add to Home Screen";
+        document.getElementById("install-btn").onclick = function() {
+          showToast("Tap the share button, then 'Add to Home Screen'");
+        };
+        document.getElementById("install-banner").style.display = "block";
+      }
+    } else if (deferredInstallPrompt) {
+      document.getElementById("install-banner").style.display = "block";
+    }
+  }, 30000);
+}
+
+function installApp() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(function(result) {
+      if (result.outcome === "accepted") {
+        showToast("App installed!");
+      }
+      deferredInstallPrompt = null;
+      document.getElementById("install-banner").style.display = "none";
+    });
+  }
+}
+
+function dismissInstall() {
+  document.getElementById("install-banner").style.display = "none";
+  localStorage.setItem("frame_install_dismissed", "1");
+}
+
+
+// ---- UTILITY ----
+function daysBetween(d1, d2) {
+  var a = new Date(d1);
+  var b = new Date(d2);
+  a.setHours(0, 0, 0, 0);
+  b.setHours(0, 0, 0, 0);
+  return Math.round((b - a) / 86400000);
+}
+
+// Enter key sends message
+document.getElementById("message-input").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") sendPatientMessage();
+});
+
+// Enter key on OTP field
+document.getElementById("login-code").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") verifyOtp();
+});
+
+document.getElementById("login-phone").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") requestOtp();
+});
+
+
+// ---- BIOMETRIC AUTH (WebAuthn) ----
+function isBiometricAvailable() {
+  return window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable
+    ? PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+    : Promise.resolve(false);
+}
+
+function generateToken() {
+  var arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, function(b) { return b.toString(16).padStart(2, "0"); }).join("");
+}
+
+function showBiometricModal() {
+  var modal = document.getElementById("biometric-modal");
+  modal.style.display = "flex";
+}
+
+function dismissBiometric() {
+  document.getElementById("biometric-modal").style.display = "none";
+  localStorage.setItem("frame_bio_dismissed", "1");
+}
+
+function promptBiometricIfAvailable() {
+  if (localStorage.getItem("frame_bio_cred")) return; // already enrolled
+  if (localStorage.getItem("frame_bio_dismissed")) return;
+  isBiometricAvailable().then(function(avail) {
+    if (avail) showBiometricModal();
+  });
+}
+
+function enrollBiometric() {
+  document.getElementById("biometric-modal").style.display = "none";
+  var phone = currentPatient ? currentPatient.phone : "";
+  if (!phone) return;
+
+  var token = generateToken();
+  var userId = new TextEncoder().encode(phone);
+  var challenge = crypto.getRandomValues(new Uint8Array(32));
+
+  var createOptions = {
+    publicKey: {
+      rp: { name: "FRAME Medicine" },
+      user: {
+        id: userId,
+        name: phone,
+        displayName: currentPatient.name || phone
+      },
+      challenge: challenge,
+      pubKeyCredParams: [
+        { type: "public-key", alg: -7 },
+        { type: "public-key", alg: -257 }
+      ],
+      authenticatorSelection: {
+        authenticatorAttachment: "platform",
+        userVerification: "required"
+      },
+      timeout: 60000
+    }
+  };
+
+  navigator.credentials.create(createOptions).then(function(cred) {
+    // Store credential ID locally
+    var credId = btoa(String.fromCharCode.apply(null, new Uint8Array(cred.rawId)));
+    localStorage.setItem("frame_bio_cred", credId);
+    localStorage.setItem("frame_bio_token", token);
+
+    // Save token to backend
+    apiPost("saveBiometric", { phone: phone, token: token }, function(d) {
+      if (d.success) {
+        showToast("Face ID / fingerprint enabled!");
+      } else {
+        showToast(d.error || "Failed to save");
+        localStorage.removeItem("frame_bio_cred");
+        localStorage.removeItem("frame_bio_token");
+      }
+    });
+  }).catch(function(err) {
+    console.log("Biometric enrollment failed:", err);
+    showToast("Could not set up biometric login");
+  });
+}
+
+function biometricLogin() {
+  var credId = localStorage.getItem("frame_bio_cred");
+  var token = localStorage.getItem("frame_bio_token");
+  if (!credId || !token) return;
+
+  var rawId = Uint8Array.from(atob(credId), function(c) { return c.charCodeAt(0); });
+  var challenge = crypto.getRandomValues(new Uint8Array(32));
+
+  var getOptions = {
+    publicKey: {
+      challenge: challenge,
+      allowCredentials: [{
+        type: "public-key",
+        id: rawId,
+        transports: ["internal"]
+      }],
+      userVerification: "required",
+      timeout: 60000
+    }
+  };
+
+  document.getElementById("login-error").style.display = "none";
+  showLoading(true);
+
+  navigator.credentials.get(getOptions).then(function() {
+    // Biometric verified locally — now verify token with backend
+    apiGet("verifyBiometric", { token: token }, function(data) {
+      showLoading(false);
+      if (data.success && data.verified) {
+        localStorage.setItem("frame_phone", data.patient.phone);
+        currentPatient = data.patient;
+        apiGet("getPatientDashboard", { phone: data.patient.phone }, function(dashData) {
+          if (dashData.success) {
+            renderDashboard(dashData);
+          }
+          showScreen("home");
+          document.getElementById("bottom-nav").style.display = "block";
+        });
+      } else {
+        showLoading(false);
+        document.getElementById("login-error").textContent = "Biometric login failed. Please use your phone number.";
+        document.getElementById("login-error").style.display = "block";
+        // Clear invalid credentials
+        localStorage.removeItem("frame_bio_cred");
+        localStorage.removeItem("frame_bio_token");
+        document.getElementById("login-biometric").style.display = "none";
+      }
+    });
+  }).catch(function(err) {
+    showLoading(false);
+    console.log("Biometric auth failed:", err);
+  });
+}
+
+// Show biometric button on login screen if enrolled
+function checkBiometricLogin() {
+  if (localStorage.getItem("frame_bio_cred") && localStorage.getItem("frame_bio_token")) {
+    isBiometricAvailable().then(function(avail) {
+      if (avail) {
+        document.getElementById("login-biometric").style.display = "block";
+      }
+    });
+  }
+}
+
+checkBiometricLogin();
+</script>
+</body>
+</html>

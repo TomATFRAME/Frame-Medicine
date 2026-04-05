@@ -1,0 +1,25 @@
+{
+  "name": "frame-medicine-native",
+  "version": "1.0.0",
+  "description": "FRAME Medicine native app wrapper",
+  "scripts": {
+    "build": "cp ../patient-app/index.html www/ && cp ../patient-app/sw.js www/",
+    "cap:init": "npx cap add ios && npx cap add android",
+    "cap:sync": "npm run build && npx cap sync",
+    "cap:ios": "npm run build && npx cap sync ios && npx cap open ios",
+    "cap:android": "npm run build && npx cap sync android && npx cap open android"
+  },
+  "keywords": [],
+  "author": "FRAME Medicine",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.3.0",
+    "@capacitor/push-notifications": "^8.0.3",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2"
+  }
+}
