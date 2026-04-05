@@ -56,6 +56,16 @@ jobs:
         working-directory: native/android
         run: chmod +x ./gradlew
 
+      - name: Generate keystore
+        run: |
+          keytool -genkey -v \
+            -keystore /tmp/keystore.jks \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -alias framemedicine \
+            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -keypass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -dname "CN=Tom, OU=Development, O=PinePeakMed LLC, L=Jacksonville, ST=FL, C=US"
+
       - name: Configure release signing
         working-directory: native/android
         run: |
@@ -64,10 +74,10 @@ jobs:
           android {
               signingConfigs {
                   release {
-                      storeFile file(System.getenv("KEYSTORE_PATH") ?: "/tmp/keystore.jks")
+                      storeFile file("/tmp/keystore.jks")
                       storePassword System.getenv("KEYSTORE_PASSWORD")
-                      keyAlias System.getenv("KEY_ALIAS")
-                      keyPassword System.getenv("KEY_PASSWORD")
+                      keyAlias "framemedicine"
+                      keyPassword System.getenv("KEYSTORE_PASSWORD")
                   }
               }
               buildTypes {
@@ -78,16 +88,10 @@ jobs:
           }
           SIGNING
 
-      - name: Decode keystore
-        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > /tmp/keystore.jks
-
       - name: Build Android AAB
         working-directory: native/android
         env:
-          KEYSTORE_PATH: /tmp/keystore.jks
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew bundleRelease
 
       - name: Upload AAB
