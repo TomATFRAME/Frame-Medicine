@@ -379,23 +379,47 @@ function sendPushNotification(patientName, title, body) {
   return false;
 }
 
+// Communication preferences: "all" (default), "email", "sms", "app", "email,sms", "none"
+// Returns { sms: true/false, email: true/false, app: true/false }
+function getCommPref(patientName) {
+  var defaults = { sms: true, email: true, app: true };
+  if (!patientName) return defaults;
+  var pRow = findRowByValue("Patients", P_NAME, patientName);
+  if (pRow === -1) return defaults;
+  var pref = safeString(getSheet("Patients").getRange(pRow, P_COMMPREF + 1).getValue()).toLowerCase().trim();
+  if (!pref || pref === "all") return defaults;
+  // Parse comma-separated: "email,sms" or single: "sms"
+  var channels = pref.split(",");
+  var result = {
+    sms: channels.indexOf("sms") !== -1 || channels.indexOf("text") !== -1,
+    email: channels.indexOf("email") !== -1,
+    app: channels.indexOf("app") !== -1 || channels.indexOf("push") !== -1
+  };
+  // Must have at least one channel — fall back to SMS if they somehow opt out of everything
+  if (!result.sms && !result.email && !result.app) result.sms = true;
+  return result;
+}
+
 function smartSendMessage(patientName, phone, title, body, isCritical) {
-  // Check patient communication preference
-  if (patientName && !isCritical) {
-    var pRow = findRowByValue("Patients", P_NAME, patientName);
-    if (pRow !== -1) {
-      var pref = safeString(getSheet("Patients").getRange(pRow, P_COMMPREF + 1).getValue()).toLowerCase();
-      if (pref === "none" || pref === "opt-out") return false;
-    }
-  }
+  var prefs = getCommPref(patientName);
+  // Critical messages always send via SMS
+  if (!isCritical && !prefs.sms && !prefs.app) return false;
+
   var pushSent = false;
-  if (patientName) {
+  if (patientName && prefs.app) {
     pushSent = sendPushNotification(patientName, title, body);
   }
-  if (!pushSent || isCritical) {
+  if (prefs.sms && (!pushSent || isCritical)) {
     sendTwilioSMS(phone, body);
   }
   return true;
+}
+
+// Check if we should send email notifications for this patient
+function shouldEmailForPatient(patientName) {
+  if (!patientName) return true; // default yes for unknown
+  var prefs = getCommPref(patientName);
+  return prefs.email;
 }
 
 
