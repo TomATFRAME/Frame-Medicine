@@ -1855,7 +1855,7 @@ function previewPatientImport(headers, dataRows) {
     }
 
     if (d.newPatients.length > 0 || d.changedPatients.length > 0) {
-      html += '<button class="btn btn-green btn-block mt-16" onclick="applyPatientImport()">Apply Changes</button>';
+      html += '<button id="btn-import-patients" class="btn btn-green btn-block mt-16" onclick="applyPatientImport()">Apply Changes</button>';
     } else {
       html += '<p class="text-center text-muted mt-16">No changes to apply</p>';
     }
@@ -1867,6 +1867,8 @@ function previewPatientImport(headers, dataRows) {
 }
 
 function applyPatientImport() {
+  var btn = document.getElementById("btn-import-patients");
+  btn.disabled = true; btn.style.opacity = "0.5"; btn.textContent = "Importing...";
   var d = window._importDiff;
   apiPost("importPatients", {
     newPatients: d.newPatients, changedPatients: d.changedPatients
@@ -1878,6 +1880,7 @@ function applyPatientImport() {
         + '<p class="text-muted mt-4">Added: ' + r.added + ' | Updated: ' + r.updated + '</p></div>';
       showToast("Import complete");
     } else {
+      btn.disabled = false; btn.style.opacity = "1"; btn.textContent = "Apply Changes";
       showToast(r.error || "Import failed");
     }
   });
@@ -1915,7 +1918,7 @@ function previewSalesImport(headers, dataRows) {
         html += '<tr><td>' + esc(s.invoice) + '</td><td>' + esc(s.patient) + '</td><td>$' + esc(s.total) + '</td></tr>';
       }
       html += '</table>';
-      html += '<button class="btn btn-green btn-block mt-16" onclick="applySalesImport()">Import ' + d.newSales.length + ' New Sales</button>';
+      html += '<button id="btn-import-sales" class="btn btn-green btn-block mt-16" onclick="applySalesImport()">Import ' + d.newSales.length + ' New Sales</button>';
     } else {
       html += '<p class="text-center text-muted mt-16">No new sales to import</p>';
     }
@@ -1926,6 +1929,8 @@ function previewSalesImport(headers, dataRows) {
 }
 
 function applySalesImport() {
+  var btn = document.getElementById("btn-import-sales");
+  btn.disabled = true; btn.style.opacity = "0.5"; btn.textContent = "Importing...";
   apiPost("importSales", { newSales: window._salesDiff.newSales }, function(r) {
     if (r.success) {
       document.getElementById("import-preview").innerHTML = '<div class="text-center mt-16">'
@@ -1934,6 +1939,7 @@ function applySalesImport() {
         + '<p class="text-muted mt-4">Added: ' + r.added + '</p></div>';
       showToast("Sales imported");
     } else {
+      btn.disabled = false; btn.style.opacity = "1"; btn.textContent = "Import Sales";
       showToast(r.error || "Failed");
     }
   });
@@ -2007,13 +2013,15 @@ function previewMembershipImport(rows) {
       + '<td>$' + m.outstanding.toFixed(2) + '</td></tr>';
   }
   html += '</table>';
-  html += '<button class="btn btn-green btn-block mt-16" onclick="applyMembershipImport()">Update Billing Records</button>';
+  html += '<button id="btn-import-members" class="btn btn-green btn-block mt-16" onclick="applyMembershipImport()">Update Billing Records</button>';
 
   window._membershipData = mapped;
   document.getElementById("import-preview").innerHTML = html;
 }
 
 function applyMembershipImport() {
+  var btn = document.getElementById("btn-import-members");
+  btn.disabled = true; btn.style.opacity = "0.5"; btn.textContent = "Importing...";
   apiPost("importMemberships", { memberships: window._membershipData }, function(r) {
     if (r.success) {
       document.getElementById("import-preview").innerHTML = '<div class="text-center mt-16">'
@@ -2022,6 +2030,7 @@ function applyMembershipImport() {
         + '<p class="text-muted mt-4">Updated: ' + r.updated + ' | New: ' + r.added + ' | Skipped: ' + r.skipped + '</p></div>';
       showToast("Memberships imported");
     } else {
+      btn.disabled = false; btn.style.opacity = "1"; btn.textContent = "Update Billing Records";
       showToast(r.error || "Failed");
     }
   });
