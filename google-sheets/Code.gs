@@ -6,13 +6,13 @@
 // ============================================
 
 // ---- SPREADSHEET ID ----
-var SHEET_ID = "1ufdceu48Wuw6pDMXbJf7tX2ib0344ACWmhtanIedDPg";
+var SHEET_ID = "YOUR_SHEET_ID_HERE";
 
 // ---- TWILIO CREDENTIALS ----
-var TWILIO_SID = "AC02df2316516db1b95448243c98e1e3d1";
-var TWILIO_TOKEN = "594581284b6d54a435a1dc7d613f329c";
-var TWILIO_NUMBER = "+12393726339";
-var TWILIO_VERIFY_SID = "VA3776bfcc6ed5acca7fe089de28793354";
+var TWILIO_SID = "YOUR_TWILIO_SID";
+var TWILIO_TOKEN = "YOUR_TWILIO_TOKEN";
+var TWILIO_NUMBER = "YOUR_TWILIO_NUMBER";
+var TWILIO_VERIFY_SID = "YOUR_TWILIO_VERIFY_SID";
 
 // ---- VAPID KEYS (generate your own for production) ----
 var VAPID_PUBLIC_KEY = "";
