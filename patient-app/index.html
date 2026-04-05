@@ -674,6 +674,12 @@ function showLoginStep1() {
 }
 
 function logout() {
+  var phone = localStorage.getItem("frame_phone");
+  var token = localStorage.getItem("frame_bio_token");
+  // Revoke token server-side so a stolen token is useless
+  if (phone && token) {
+    apiPost("revokeBiometric", { phone: phone }, function() {});
+  }
   localStorage.removeItem("frame_phone");
   localStorage.removeItem("frame_bio_cred");
   localStorage.removeItem("frame_bio_token");

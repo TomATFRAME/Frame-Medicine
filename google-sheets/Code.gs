@@ -35,7 +35,7 @@ var P_MED = 10, P_PLAN = 11, P_RATE = 12, P_TERM = 13, P_MEMSTART = 14;
 var P_CONTEND = 15, P_CYCLES = 16, P_OUTSTANDING = 17;
 var P_CIDAY = 18, P_CITIME = 19, P_GLPDAY = 20, P_GLPTIME = 21;
 var P_STATUS = 22, P_FOLLOWUP = 23, P_NOTES = 24;
-var P_PUSH = 25, P_PUSHSUB = 26, P_REFSOURCE = 27, P_REFBY = 28, P_BIOTOKEN = 29;
+var P_PUSH = 25, P_PUSHSUB = 26, P_REFSOURCE = 27, P_REFBY = 28, P_BIOTOKEN = 29, P_BIOTOKEN_DATE = 30;
 
 // Billing Tab
 var S_PATIENT = 0, S_PLAN = 1, S_RATE = 2, S_TERM = 3, S_MEMSTART = 4;
@@ -460,6 +460,7 @@ function doPost(e) {
       if (action === "savePushSubscription") return handleSavePushSubscription(data);
       if (action === "logDoseChange") return handleLogDoseChange(data);
       if (action === "saveBiometric") return handleSaveBiometric(data);
+      if (action === "revokeBiometric") return handleRevokeBiometric(data);
       if (action === "diffPatients") return handleDiffPatients(data);
       if (action === "diffSales") return handleDiffSales(data);
       return errorResponse("Unknown action: " + action);
@@ -518,7 +519,19 @@ function handleSaveBiometric(data) {
   if (row === -1) return errorResponse("Patient not found");
   var sheet = getSheet("Patients");
   sheet.getRange(row, P_BIOTOKEN + 1).setValue(token);
+  sheet.getRange(row, P_BIOTOKEN_DATE + 1).setValue(new Date());
   return successResponse({ message: "Biometric token saved" });
+}
+
+function handleRevokeBiometric(data) {
+  var phone = formatPhone(data.phone || "");
+  if (!phone) return errorResponse("Phone required");
+  var row = findRowByPhone("Patients", P_PHONE, phone);
+  if (row === -1) return errorResponse("Patient not found");
+  var sheet = getSheet("Patients");
+  sheet.getRange(row, P_BIOTOKEN + 1).setValue("");
+  sheet.getRange(row, P_BIOTOKEN_DATE + 1).setValue("");
+  return successResponse({ message: "Biometric token revoked" });
 }
 
 function handleVerifyBiometric(params) {
@@ -527,8 +540,16 @@ function handleVerifyBiometric(params) {
   var patients = getSheetData("Patients");
   for (var i = 0; i < patients.length; i++) {
     if (safeString(patients[i][P_BIOTOKEN]) === token) {
+      // Check 90-day expiry
+      var created = parseDate(patients[i][P_BIOTOKEN_DATE]);
+      if (created && daysBetween(created, new Date()) > 90) {
+        var s = getSheet("Patients");
+        s.getRange(i + 2, P_BIOTOKEN + 1).setValue("");
+        s.getRange(i + 2, P_BIOTOKEN_DATE + 1).setValue("");
+        return errorResponse("Token expired. Please sign in with your phone number.");
+      }
       var sheet = getSheet("Patients");
-      var data = sheet.getRange(i + 2, 1, 1, 30).getValues()[0];
+      var data = sheet.getRange(i + 2, 1, 1, 31).getValues()[0];
       return successResponse({ verified: true, patient: buildPatientObj(data) });
     }
   }
