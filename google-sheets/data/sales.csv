@@ -1,0 +1,16 @@
+Invoice #,Patient,Item,Purchase Date,Total,Status
+INV-2026-001,Jake Morrison,Monthly Testosterone Membership,01/05/2026,150.00,Paid
+INV-2026-002,Derek Callahan,Monthly Tirzepatide Membership,01/05/2026,300.00,Paid
+INV-2026-003,Marcus Whitfield,Monthly Testosterone Membership,01/08/2026,150.00,Paid
+INV-2026-004,Ryan Blackwell,Tirz + Test Membership,01/10/2026,400.00,Paid
+INV-2026-005,Trent Halstead,Monthly Semaglutide Membership,01/12/2026,200.00,Paid
+INV-2026-006,Corey Langston,Monthly Testosterone Membership,01/15/2026,150.00,Paid
+INV-2026-007,Nathan Prescott,Tadalafil Standalone,01/18/2026,59.00,Paid
+INV-2026-008,Brandon Strickland,Hair Plan Foam,01/20/2026,99.00,Paid
+INV-2026-009,Adam Beckett,Monthly Testosterone Membership,01/22/2026,150.00,Paid
+INV-2026-010,Kevin Thornton,Monthly Tirzepatide Membership,01/25/2026,300.00,Paid
+INV-2026-011,Jake Morrison,Monthly Testosterone Membership,02/05/2026,150.00,Paid
+INV-2026-012,Derek Callahan,Monthly Tirzepatide Membership,02/05/2026,300.00,Paid
+INV-2026-013,Marcus Whitfield,Monthly Testosterone Membership,02/08/2026,150.00,Paid
+INV-2026-014,Ryan Blackwell,Tirz + Test Membership,02/10/2026,400.00,Paid
+INV-2026-015,Trent Halstead,Monthly Semaglutide Membership,02/12/2026,200.00,Paid

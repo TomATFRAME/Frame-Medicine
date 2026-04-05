@@ -1,0 +1,11 @@
+Patient,Plan,Rate,Term,Start Date,Last Payment,Contract End,Cycles Left,Outstanding,Status,Last Shipped,Next Shipment,Next Payment Due,Notes
+Jake Morrison,Monthly Testosterone,150,6,01/05/2026,03/05/2026,07/05/2026,3,450,Active,02/28/2026,04/28/2026,04/05/2026,
+Derek Callahan,Monthly Tirzepatide,300,3,01/05/2026,03/05/2026,04/05/2026,0,0,Active,03/01/2026,04/01/2026,04/05/2026,Renewing
+Marcus Whitfield,Monthly Testosterone,150,6,01/08/2026,03/08/2026,07/08/2026,3,450,Active,03/05/2026,05/05/2026,04/08/2026,
+Ryan Blackwell,Tirz + Test,400,6,01/10/2026,03/10/2026,07/10/2026,3,1200,Active,03/08/2026,05/08/2026,04/10/2026,
+Trent Halstead,Monthly Semaglutide,200,3,01/12/2026,03/12/2026,04/12/2026,0,0,Active,03/10/2026,04/10/2026,04/12/2026,
+Corey Langston,Monthly Testosterone,150,6,01/15/2026,02/15/2026,07/15/2026,4,600,Past Due,02/10/2026,04/10/2026,03/15/2026,Missed March payment
+Nathan Prescott,Tadalafil Standalone,59,3,01/18/2026,03/18/2026,04/18/2026,0,0,Active,,,04/18/2026,
+Brandon Strickland,Hair Plan Foam,99,3,01/20/2026,03/20/2026,04/20/2026,0,0,Active,,,04/20/2026,
+Adam Beckett,Monthly Testosterone,150,6,01/22/2026,03/22/2026,07/22/2026,3,450,Active,03/18/2026,05/18/2026,04/22/2026,
+Kevin Thornton,Monthly Tirzepatide,300,3,01/25/2026,02/25/2026,04/25/2026,1,300,Active,02/20/2026,04/20/2026,03/25/2026,
