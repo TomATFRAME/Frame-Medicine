@@ -56,15 +56,45 @@ jobs:
         working-directory: native/android
         run: chmod +x ./gradlew
 
+      - name: Configure release signing
+        working-directory: native/android
+        run: |
+          cat >> app/build.gradle << 'SIGNING'
+
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file(System.getenv("KEYSTORE_PATH") ?: "/tmp/keystore.jks")
+                      storePassword System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }
+          SIGNING
+
+      - name: Decode keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > /tmp/keystore.jks
+
       - name: Build Android AAB
         working-directory: native/android
-        run: ./gradlew bundleDebug
+        env:
+          KEYSTORE_PATH: /tmp/keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
           name: frame-medicine-android
-          path: native/android/app/build/outputs/bundle/debug/*.aab
+          path: native/android/app/build/outputs/bundle/release/*.aab
 
   build-ios:
     if: ${{ inputs.platform == 'both' || inputs.platform == 'ios' }}
