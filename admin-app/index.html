@@ -1773,11 +1773,11 @@ function previewPatientImport(headers, dataRows) {
     for (var j = 0; j < headers.length; j++) {
       var h = headers[j];
       var v = j < row.length ? row[j].trim() : "";
-      if (h.indexOf("first") !== -1) obj.firstName = v;
+      if (h.indexOf("first") !== -1 && h.indexOf("name") !== -1) obj.firstName = v;
       if (h.indexOf("last") !== -1) {
         if (h.indexOf("name") !== -1) obj.lastName = v;
       }
-      if (h === "phone" || h === "mobile" || h === "cell") obj.phone = v;
+      if (h.indexOf("phone") !== -1 || h === "mobile" || h === "cell") obj.phone = v;
       if (h === "email") obj.email = v;
       if (h.indexOf("street") !== -1 || h.indexOf("address") !== -1) obj.street = v;
       if (h === "city") obj.city = v;
