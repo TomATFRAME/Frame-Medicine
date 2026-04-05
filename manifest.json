@@ -2,7 +2,7 @@
   "name": "FRAME Medicine",
   "short_name": "FRAME",
   "description": "Your FRAME Medicine patient portal",
-  "start_url": "/app",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#080808",
   "theme_color": "#E8891A",

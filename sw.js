@@ -2,7 +2,7 @@
 // Handles push notifications and basic offline caching
 
 var CACHE_NAME = 'frame-patient-v1';
-var urlsToCache = ['/app'];
+var urlsToCache = ['/'];
 
 self.addEventListener('install', function(event) {
   event.waitUntil(

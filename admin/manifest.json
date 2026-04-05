@@ -2,7 +2,7 @@
   "name": "FRAME Admin",
   "short_name": "FRAME CRM",
   "description": "FRAME Medicine Admin CRM",
-  "start_url": "/admin",
+  "start_url": "/admin/",
   "display": "standalone",
   "background_color": "#080808",
   "theme_color": "#E8891A",

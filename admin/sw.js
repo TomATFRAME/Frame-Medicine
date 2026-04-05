@@ -1,6 +1,6 @@
 // FRAME Medicine — Admin App Service Worker
 var CACHE_NAME = 'frame-admin-v1';
-var urlsToCache = ['/admin'];
+var urlsToCache = ['/admin/'];
 
 self.addEventListener('install', function(event) {
   event.waitUntil(
