@@ -19,7 +19,7 @@ var VAPID_PUBLIC_KEY = "";
 var VAPID_PRIVATE_KEY = "";
 
 // ---- DEPLOY URL ----
-var DEPLOY_URL = "https://script.google.com/macros/s/AKfycbzQD5XmfiSDUhAt6ySd3HAZiCBjSzJmGZodZyNKiJXIpJ_vpkW7g1A7lH1qGjMS2ht7qw/exec";
+var DEPLOY_URL = "https://script.google.com/macros/s/AKfycbzdSURMk8BPC7cQpHjuQ6y_xLcnFrAW4kQfV9j5Lvv_ute8JTqyvsjjKWAI_uIDXRon/exec";
 
 // ---- APP URL ----
 var APP_URL = "https://framemedicine.com/app";
