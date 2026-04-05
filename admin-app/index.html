@@ -570,6 +570,12 @@ var convoSmsToggle = true;
       if (adminUser.role === "colin") {
         document.getElementById("nav-pnl").style.display = "none";
       }
+      // Deep link: #patient/Name opens patient detail
+      var hash = window.location.hash;
+      if (hash.indexOf("#patient/") === 0) {
+        var deepName = decodeURIComponent(hash.substring(9));
+        setTimeout(function() { openPatientDetail(deepName); }, 800);
+      }
     } catch (e) {
       localStorage.removeItem("frame_admin");
     }

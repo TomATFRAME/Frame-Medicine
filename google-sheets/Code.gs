@@ -21,8 +21,9 @@ var VAPID_PRIVATE_KEY = "";
 // ---- DEPLOY URL ----
 var DEPLOY_URL = "https://script.google.com/macros/s/AKfycbzdSURMk8BPC7cQpHjuQ6y_xLcnFrAW4kQfV9j5Lvv_ute8JTqyvsjjKWAI_uIDXRon/exec";
 
-// ---- APP URL ----
+// ---- APP URLS ----
 var APP_URL = "https://framemedicine.com/app";
+var ADMIN_URL = "https://framemedicine.com/admin-app";
 
 // ============================================
 // COLUMN INDEX CONSTANTS
@@ -318,6 +319,14 @@ function checkTwilioVerify(phone, code) {
 // ============================================
 // EMAIL FUNCTIONS
 // ============================================
+
+function patientLink(name) {
+  return ADMIN_URL + "#patient/" + encodeURIComponent(name);
+}
+
+function patientLinkHtml(name) {
+  return '<a href="' + patientLink(name) + '" style="color:#E8891A;text-decoration:none;font-weight:600;">' + name + '</a>';
+}
 
 function sendBrandedEmail(to, subject, htmlBody) {
   var tomEmail = safeString(getSettingValue("Tom Email"));
@@ -1269,16 +1278,18 @@ function handleSubmitCheckIn(data) {
   // Email providers
   var accent = data.responseRequested ? "#ff4444" : "#E8891A";
   var responseFlag = data.responseRequested
-    ? "<p style='color:#ff4444;font-weight:bold;'>RESPONSE REQUESTED</p>"
+    ? "<div style='background:rgba(255,68,68,0.15);border:1px solid rgba(255,68,68,0.4);border-radius:6px;padding:10px;text-align:center;margin-bottom:12px;'><span style='color:#ff4444;font-weight:bold;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;'>RESPONSE REQUESTED</span></div>"
     : "";
   sendBrandedEmail("both",
-    "Check-In: " + data.patientName,
-    "<h2 style='color:" + accent + ";'>" + data.patientName + " Check-In</h2>"
-    + responseFlag
-    + "<p><strong>Medication:</strong> " + (data.medication || "N/A") + "</p>"
-    + "<p><strong>Rating:</strong> " + (data.rating || "N/A") + "</p>"
-    + "<p><strong>Symptoms:</strong> " + (data.symptoms || "None reported") + "</p>"
-    + "<p><strong>Notes:</strong> " + (data.notes || "None") + "</p>"
+    (data.responseRequested ? "URGENT: " : "") + "Check-In: " + data.patientName,
+    responseFlag
+    + "<h2 style='color:" + accent + ";margin:0 0 12px 0;'>" + patientLinkHtml(data.patientName) + " — Check-In</h2>"
+    + "<table style='width:100%;border-collapse:collapse;'>"
+    + "<tr><td style='padding:8px 0;color:rgba(255,255,255,0.5);width:100px;'>Medication</td><td style='padding:8px 0;color:#fff;'>" + (data.medication || "N/A") + "</td></tr>"
+    + "<tr><td style='padding:8px 0;color:rgba(255,255,255,0.5);'>Rating</td><td style='padding:8px 0;color:#fff;'>" + (data.rating || "N/A") + "</td></tr>"
+    + "<tr><td style='padding:8px 0;color:rgba(255,255,255,0.5);'>Symptoms</td><td style='padding:8px 0;color:#fff;'>" + (data.symptoms || "None reported") + "</td></tr>"
+    + "<tr><td style='padding:8px 0;color:rgba(255,255,255,0.5);'>Notes</td><td style='padding:8px 0;color:#fff;'>" + (data.notes || "None") + "</td></tr>"
+    + "</table>"
   );
   // Log to refill log
   appendRefillLog(data.patientName, data.medication, "Check-in submitted", "App", data.notes || "");
@@ -1334,9 +1345,10 @@ function handleConfirmRefill(data) {
   // Email providers
   sendBrandedEmail("both",
     "Refill Confirmed: " + name,
-    "<h2 style='color:#4CAF50;'>" + name + " Confirmed Refill</h2>"
-    + "<p><strong>Medication:</strong> " + (data.medication || "N/A") + "</p>"
-    + "<p>Patient confirmed their refill via the app.</p>"
+    "<div style='border-left:4px solid #4CAF50;padding:12px 16px;background:rgba(76,175,80,0.08);border-radius:0 8px 8px 0;'>"
+    + "<h2 style='color:#4CAF50;margin:0 0 8px 0;'>" + patientLinkHtml(name) + " — Refill Confirmed</h2>"
+    + "<p style='color:rgba(255,255,255,0.6);margin:0;'>" + (data.medication || "N/A") + " — confirmed via app</p>"
+    + "</div>"
   );
   return successResponse({ message: "Refill confirmed" });
 }
@@ -1354,10 +1366,12 @@ function handleDeclineRefill(data) {
   appendRefillLog(name, data.medication || "", "Refill declined: " + (data.reason || ""), "App", data.reason || "");
   sendBrandedEmail("both",
     "REFILL DECLINED: " + name,
-    "<h2 style='color:#ff4444;'>" + name + " Declined Refill</h2>"
-    + "<p><strong>Medication:</strong> " + (data.medication || "N/A") + "</p>"
-    + "<p><strong>Reason:</strong> " + (data.reason || "No reason given") + "</p>"
-    + "<p style='color:#ff4444;'>Follow-up flag has been set.</p>"
+    "<div style='border-left:4px solid #ff4444;padding:12px 16px;background:rgba(255,68,68,0.08);border-radius:0 8px 8px 0;'>"
+    + "<h2 style='color:#ff4444;margin:0 0 8px 0;'>" + patientLinkHtml(name) + " — Refill Declined</h2>"
+    + "<p style='color:#fff;margin:0 0 4px 0;'><strong>Medication:</strong> " + (data.medication || "N/A") + "</p>"
+    + "<p style='color:#fff;margin:0 0 4px 0;'><strong>Reason:</strong> " + (data.reason || "No reason given") + "</p>"
+    + "<p style='color:#ff4444;margin:8px 0 0 0;font-weight:bold;'>Follow-up flag set</p>"
+    + "</div>"
   );
   return successResponse({ message: "Decline recorded" });
 }
@@ -1403,8 +1417,10 @@ function handleSendMessage(data) {
     // But also notify via email
     sendBrandedEmail("both",
       "New Message from " + name,
-      "<h2 style='color:#E8891A;'>Message from " + name + "</h2>"
-      + "<p>" + text + "</p>"
+      "<div style='border-left:4px solid #E8891A;padding:12px 16px;background:rgba(232,137,26,0.08);border-radius:0 8px 8px 0;'>"
+      + "<h2 style='color:#E8891A;margin:0 0 8px 0;'>" + patientLinkHtml(name) + "</h2>"
+      + "<p style='color:#fff;margin:0;'>" + text + "</p>"
+      + "</div>"
     );
   }
   return successResponse({ message: "Message sent" });
@@ -1667,19 +1683,6 @@ function handleNewOrder(data) {
       logDoseChange(name, med, prevDose, dose, data.changedBy || "Sheffield", "New order");
     }
   }
-
-  // Email notification
-  sendBrandedEmail("both",
-    "New Order: " + name,
-    "<h2 style='color:#2D5A27;'>New Order Logged</h2>"
-    + "<p><strong>Patient:</strong> " + name + "</p>"
-    + "<p><strong>Medication:</strong> " + med + " " + dose + "mg/wk</p>"
-    + "<p><strong>Vials:</strong> " + vials + "</p>"
-    + "<p><strong>Ship Date:</strong> " + formatDateStr(shipDate) + "</p>"
-    + "<p><strong>Days Covered:</strong> " + daysCovered + "</p>"
-    + "<p><strong>Next Due:</strong> " + formatDateStr(nextDue) + "</p>"
-    + "<p><strong>Total:</strong> $" + total.toFixed(2) + "</p>"
-  );
 
   appendRefillLog(name, med, "Order logged: " + vials + " vials", "Admin", "Ship: " + formatDateStr(shipDate));
 
@@ -2193,8 +2196,10 @@ function handleTwilioInbound(e) {
     appendRefillLog(contactName, "", "Refill confirmed via text", "Twilio", body);
     sendBrandedEmail("both",
       "Refill Confirmed (Text): " + contactName,
-      "<h2 style='color:#4CAF50;'>" + contactName + " confirmed refill via text</h2>"
-      + "<p>Reply: " + body + "</p>"
+      "<div style='border-left:4px solid #4CAF50;padding:12px 16px;background:rgba(76,175,80,0.08);border-radius:0 8px 8px 0;'>"
+      + "<h2 style='color:#4CAF50;margin:0 0 8px 0;'>" + patientLinkHtml(contactName) + " — Refill Confirmed</h2>"
+      + "<p style='color:rgba(255,255,255,0.6);margin:0;'>Via text: \"" + body + "\"</p>"
+      + "</div>"
     );
   } else if (lowerBody === "no" || lowerBody === "decline" || lowerBody === "stop") {
     if (pRow !== -1) {
@@ -2203,18 +2208,21 @@ function handleTwilioInbound(e) {
     }
     appendRefillLog(contactName, "", "Refill declined via text", "Twilio", body);
     sendBrandedEmail("both",
-      "Refill DECLINED (Text): " + contactName,
-      "<h2 style='color:#ff4444;'>" + contactName + " declined refill via text</h2>"
-      + "<p>Reply: " + body + "</p>"
-      + "<p style='color:#ff4444;'>Follow-up flag set.</p>"
+      "REFILL DECLINED (Text): " + contactName,
+      "<div style='border-left:4px solid #ff4444;padding:12px 16px;background:rgba(255,68,68,0.08);border-radius:0 8px 8px 0;'>"
+      + "<h2 style='color:#ff4444;margin:0 0 8px 0;'>" + patientLinkHtml(contactName) + " — Refill Declined</h2>"
+      + "<p style='color:#fff;margin:0 0 4px 0;'>Via text: \"" + body + "\"</p>"
+      + "<p style='color:#ff4444;margin:4px 0 0 0;font-weight:bold;'>Follow-up flag set</p>"
+      + "</div>"
     );
   } else {
     // General inbound message — email notification
     sendBrandedEmail("both",
       "New Text from " + contactName,
-      "<h2 style='color:#E8891A;'>Text from " + contactName + "</h2>"
-      + "<p>" + body + "</p>"
-      + "<p style='color:rgba(255,255,255,0.6);'>Reply in the admin app.</p>"
+      "<div style='border-left:4px solid #E8891A;padding:12px 16px;background:rgba(232,137,26,0.08);border-radius:0 8px 8px 0;'>"
+      + "<h2 style='color:#E8891A;margin:0 0 8px 0;'>" + patientLinkHtml(contactName) + "</h2>"
+      + "<p style='color:#fff;margin:0;'>" + body + "</p>"
+      + "</div>"
     );
   }
 
@@ -2653,7 +2661,7 @@ function setupTriggers() {
     .everyDays(1)
     .create();
 
-  // Daily 12 PM — Refill alerts, check-ins, weight texts
+  // Daily 12 PM — Patient texts (refill alerts, check-ins, weight)
   ScriptApp.newTrigger("dailyRefillAlerts")
     .timeBased()
     .atHour(12)
@@ -2672,31 +2680,6 @@ function setupTriggers() {
     .everyDays(1)
     .create();
 
-  // Every 6 hours — Escalation check
-  ScriptApp.newTrigger("checkEscalation")
-    .timeBased()
-    .everyHours(6)
-    .create();
-
-  // Daily 8 AM — Billing, lead follow-ups, lab compliance
-  ScriptApp.newTrigger("checkBillingDue")
-    .timeBased()
-    .atHour(8)
-    .everyDays(1)
-    .create();
-
-  ScriptApp.newTrigger("checkLeadFollowUps")
-    .timeBased()
-    .atHour(8)
-    .everyDays(1)
-    .create();
-
-  ScriptApp.newTrigger("checkLabCompliance")
-    .timeBased()
-    .atHour(8)
-    .everyDays(1)
-    .create();
-
   // Last day of month — CSV import reminder
   ScriptApp.newTrigger("monthlyImportReminder")
     .timeBased()
@@ -2706,97 +2689,168 @@ function setupTriggers() {
 }
 
 
-// ---- DAILY DIGEST (9 AM) ----
+// ---- DAILY DIGEST (9 AM) — ONE email with everything ----
 function dailyDigest() {
   var patients = getSheetData("Patients");
   var today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  // ---- Collect data ----
   var overdue = [];
   var dueSoon = [];
   var followUps = [];
-  var labsDue = [];
-  var billingDue = [];
 
   for (var i = 0; i < patients.length; i++) {
     var status = safeString(patients[i][P_STATUS]);
     if (status === "INACTIVE" || status === "Staff") continue;
     var name = safeString(patients[i][P_NAME]);
 
-    // Check supply
     var orders = getPatientOrders(name);
     if (orders.length > 0) {
       var nextDue = parseDate(orders[0].nextDue);
       if (nextDue) {
         var days = daysBetween(today, nextDue);
-        if (days < 0) overdue.push(name + " (" + Math.abs(days) + " days overdue)");
-        else if (days <= 14) dueSoon.push(name + " (" + days + " days left)");
+        if (days < 0) overdue.push({ name: name, detail: Math.abs(days) + "d overdue", med: safeString(patients[i][P_MED]) });
+        else if (days <= 14) dueSoon.push({ name: name, detail: days + "d left", med: safeString(patients[i][P_MED]) });
       }
     }
-
-    // Follow-ups
-    if (safeString(patients[i][P_FOLLOWUP]) === "YES") {
-      followUps.push(name);
-    }
+    if (safeString(patients[i][P_FOLLOWUP]) === "YES") followUps.push(name);
   }
 
   // Labs
   var labs = getSheetData("Labs");
+  var labsOverdue = [];
+  var labsDueSoon = [];
   for (var j = 0; j < labs.length; j++) {
+    var labPatient = safeString(labs[j][L_PATIENT]);
     var labNext = parseDate(labs[j][L_NEXT_DUE]);
-    if (labNext && daysBetween(today, labNext) <= 14) {
-      labsDue.push(safeString(labs[j][L_PATIENT]));
+    if (!labNext) continue;
+    var labDays = daysBetween(today, labNext);
+    var labType = "Labs";
+    if (!labs[j][L_INIT_DONE]) labType = "Initial Labs";
+    else if (!labs[j][L_90_DONE]) labType = "90-Day Labs";
+    else if (!labs[j][L_180_DONE]) labType = "180-Day Labs";
+    else if (!labs[j][L_ANN_DONE]) labType = "Annual Labs";
+
+    if (labDays < 0) {
+      labsOverdue.push({ name: labPatient, detail: Math.abs(labDays) + "d overdue", type: labType });
+      // Also update status
+      getSheet("Labs").getRange(j + 2, L_STATUS + 1).setValue("Overdue");
+    } else if (labDays <= 30) {
+      labsDueSoon.push({ name: labPatient, detail: labDays + "d", type: labType });
     }
   }
 
   // Billing
   var billing = getSheetData("Billing");
+  var billingDue = [];
+  var billingPastDue = [];
   for (var k = 0; k < billing.length; k++) {
     var bStatus = safeString(billing[k][S_STATUS]);
     if (bStatus !== "Active" && bStatus !== "Past Due") continue;
+    var bPatient = safeString(billing[k][S_PATIENT]);
     var nextPay = parseDate(billing[k][S_NEXTPAYDUE]);
-    if (nextPay && daysBetween(today, nextPay) <= 7) {
-      billingDue.push(safeString(billing[k][S_PATIENT]));
+    if (!nextPay) continue;
+    var bDays = daysBetween(today, nextPay);
+    if (bDays < 0) {
+      billingPastDue.push({ name: bPatient, detail: "$" + safeNumber(billing[k][S_OUTSTANDING]) + " — " + Math.abs(bDays) + "d overdue" });
+      getSheet("Billing").getRange(k + 2, S_STATUS + 1).setValue("Past Due");
+    } else if (bDays <= 7) {
+      billingDue.push({ name: bPatient, detail: "$" + safeNumber(billing[k][S_RATE]) + " due in " + bDays + "d" });
     }
   }
 
-  var html = "<h2 style='color:#E8891A;'>Daily Digest</h2>";
-  html += "<p style='color:rgba(255,255,255,0.6);'>" + formatDateStr(today) + "</p>";
-
-  if (overdue.length > 0) {
-    html += "<h3 style='color:#ff4444;'>OVERDUE (" + overdue.length + ")</h3><ul>";
-    for (var a = 0; a < overdue.length; a++) html += "<li>" + overdue[a] + "</li>";
-    html += "</ul>";
+  // Escalation (unread messages)
+  var escalationHours = safeNumber(getSettingValue("No-Response Escalation (hrs)")) || 48;
+  var messages = getSheetData("Messages");
+  var now = new Date();
+  var unreadEscalation = [];
+  for (var m = 0; m < messages.length; m++) {
+    if (safeString(messages[m][MSG_DIRECTION]) !== "inbound") continue;
+    if (safeString(messages[m][MSG_READ]) === "Yes") continue;
+    var ts = parseDate(messages[m][MSG_TIMESTAMP]);
+    if (!ts) continue;
+    var hoursSince = (now - ts) / 3600000;
+    if (hoursSince >= escalationHours) {
+      var msgName = safeString(messages[m][MSG_PATIENT]);
+      unreadEscalation.push({ name: msgName, detail: Math.round(hoursSince) + " hrs unread" });
+    }
   }
 
-  if (dueSoon.length > 0) {
-    html += "<h3 style='color:#E8891A;'>Due Soon (" + dueSoon.length + ")</h3><ul>";
-    for (var b = 0; b < dueSoon.length; b++) html += "<li>" + dueSoon[b] + "</li>";
-    html += "</ul>";
+  // Lead follow-ups
+  var leads = getSheetData("Leads");
+  var leadFollowUps = [];
+  for (var n = 0; n < leads.length; n++) {
+    if (safeString(leads[n][LD_CONVERTED]) === "YES") continue;
+    var nextFU = parseDate(leads[n][LD_NEXTFOLLOWUP]);
+    if (!nextFU) continue;
+    if (daysBetween(nextFU, today) >= 0) {
+      leadFollowUps.push({ name: safeString(leads[n][LD_NAME]), detail: daysBetween(nextFU, today) + "d overdue" });
+    }
   }
 
-  if (followUps.length > 0) {
-    html += "<h3 style='color:#E8891A;'>Follow-Ups (" + followUps.length + ")</h3><ul>";
-    for (var c = 0; c < followUps.length; c++) html += "<li>" + followUps[c] + "</li>";
-    html += "</ul>";
+  // ---- Build HTML ----
+  var sectionStyle = "border-radius:8px;padding:16px;margin-bottom:16px;";
+  var sectionTitleStyle = "font-family:Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin:0 0 12px 0;";
+  var itemStyle = "padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:14px;";
+  var detailStyle = "color:rgba(255,255,255,0.5);font-size:12px;margin-left:8px;";
+
+  function buildSection(title, color, bgColor, items, showType) {
+    if (items.length === 0) return "";
+    var s = "<div style='" + sectionStyle + "background:" + bgColor + ";border-left:4px solid " + color + ";'>";
+    s += "<h3 style='" + sectionTitleStyle + "color:" + color + ";'>" + title + " (" + items.length + ")</h3>";
+    for (var x = 0; x < items.length; x++) {
+      s += "<div style='" + itemStyle + "'>" + patientLinkHtml(items[x].name);
+      if (showType && items[x].type) s += "<span style='" + detailStyle + "'>" + items[x].type + "</span>";
+      s += "<span style='" + detailStyle + "'>" + items[x].detail + "</span>";
+      if (items[x].med) s += "<span style='" + detailStyle + "'>" + items[x].med + "</span>";
+      s += "</div>";
+    }
+    s += "</div>";
+    return s;
   }
 
-  if (labsDue.length > 0) {
-    html += "<h3 style='color:#E8891A;'>Labs Due (" + labsDue.length + ")</h3><ul>";
-    for (var d = 0; d < labsDue.length; d++) html += "<li>" + labsDue[d] + "</li>";
-    html += "</ul>";
+  var html = "<h1 style='font-family:Arial,sans-serif;font-size:22px;font-weight:800;color:#ffffff;margin:0 0 4px 0;'>Daily Digest</h1>";
+  html += "<p style='color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 20px 0;'>" + formatDateStr(today) + "</p>";
+
+  // Summary bar
+  var totalUrgent = overdue.length + labsOverdue.length + billingPastDue.length + unreadEscalation.length;
+  var totalWarning = dueSoon.length + labsDueSoon.length + billingDue.length + followUps.length;
+  html += "<div style='" + sectionStyle + "background:rgba(255,255,255,0.04);text-align:center;'>";
+  html += "<span style='font-size:28px;font-weight:800;color:" + (totalUrgent > 0 ? "#ff4444" : "#4CAF50") + ";'>" + totalUrgent + "</span>";
+  html += "<span style='color:rgba(255,255,255,0.5);font-size:12px;margin:0 16px;'>URGENT</span>";
+  html += "<span style='font-size:28px;font-weight:800;color:" + (totalWarning > 0 ? "#E8891A" : "#4CAF50") + ";'>" + totalWarning + "</span>";
+  html += "<span style='color:rgba(255,255,255,0.5);font-size:12px;margin:0 16px;'>UPCOMING</span>";
+  html += "<span style='font-size:28px;font-weight:800;color:#4CAF50;'>" + patients.length + "</span>";
+  html += "<span style='color:rgba(255,255,255,0.5);font-size:12px;'>PATIENTS</span>";
+  html += "</div>";
+
+  // Red sections — urgent
+  html += buildSection("OVERDUE REFILLS", "#ff4444", "rgba(255,68,68,0.08)", overdue, false);
+  html += buildSection("LABS OVERDUE", "#ff4444", "rgba(255,68,68,0.08)", labsOverdue, true);
+  html += buildSection("BILLING PAST DUE", "#ff4444", "rgba(255,68,68,0.08)", billingPastDue, false);
+  html += buildSection("UNREAD MESSAGES", "#ff4444", "rgba(255,68,68,0.08)", unreadEscalation, false);
+
+  // Orange sections — upcoming
+  html += buildSection("REFILLS DUE SOON", "#E8891A", "rgba(232,137,26,0.08)", dueSoon, false);
+  html += buildSection("LABS DUE SOON", "#E8891A", "rgba(232,137,26,0.08)", labsDueSoon, true);
+  html += buildSection("BILLING DUE", "#E8891A", "rgba(232,137,26,0.08)", billingDue, false);
+  html += buildSection("FOLLOW-UPS", "#E8891A", "rgba(232,137,26,0.08)", followUps.map(function(n) { return { name: n, detail: "flagged" }; }), false);
+
+  // Leads
+  if (leadFollowUps.length > 0) {
+    html += buildSection("LEAD FOLLOW-UPS", "#6B8AFF", "rgba(107,138,255,0.08)", leadFollowUps, false);
   }
 
-  if (billingDue.length > 0) {
-    html += "<h3 style='color:#E8891A;'>Billing Due (" + billingDue.length + ")</h3><ul>";
-    for (var f = 0; f < billingDue.length; f++) html += "<li>" + billingDue[f] + "</li>";
-    html += "</ul>";
+  if (totalUrgent === 0 && totalWarning === 0) {
+    html += "<div style='" + sectionStyle + "background:rgba(76,175,80,0.08);border-left:4px solid #4CAF50;text-align:center;'>";
+    html += "<p style='color:#4CAF50;font-size:16px;font-weight:700;margin:0;'>All clear — no action items today.</p>";
+    html += "</div>";
   }
 
-  if (overdue.length === 0 && dueSoon.length === 0 && followUps.length === 0 &&
-      labsDue.length === 0 && billingDue.length === 0) {
-    html += "<p style='color:#4CAF50;'>All clear! No urgent items today.</p>";
-  }
+  html += "<div style='text-align:center;margin-top:20px;'>";
+  html += "<a href='" + ADMIN_URL + "' style='display:inline-block;padding:12px 32px;background:#E8891A;color:#fff;text-decoration:none;border-radius:6px;font-weight:700;font-size:14px;letter-spacing:0.1em;text-transform:uppercase;'>Open Dashboard</a>";
+  html += "</div>";
 
   sendBrandedEmail("both", "Daily Digest - " + formatDateStr(today), html);
 }
@@ -2902,106 +2956,9 @@ function dailyWeightTexts() {
 }
 
 
-// ---- EVERY 6 HOURS — ESCALATION CHECK ----
-function checkEscalation() {
-  var escalationHours = safeNumber(getSettingValue("No-Response Escalation (hrs)")) || 48;
-  var messages = getSheetData("Messages");
-  var now = new Date();
-  var patients = {};
-
-  // Find inbound messages that are unread and old
-  for (var i = 0; i < messages.length; i++) {
-    if (safeString(messages[i][MSG_DIRECTION]) !== "inbound") continue;
-    if (safeString(messages[i][MSG_READ]) === "Yes") continue;
-    var ts = parseDate(messages[i][MSG_TIMESTAMP]);
-    if (!ts) continue;
-    var hoursSince = (now - ts) / 3600000;
-    if (hoursSince >= escalationHours) {
-      var name = safeString(messages[i][MSG_PATIENT]);
-      if (!patients[name]) patients[name] = hoursSince;
-    }
-  }
-
-  var names = Object.keys(patients);
-  if (names.length === 0) return;
-
-  var html = "<h2 style='color:#ff4444;'>Escalation Alert</h2>"
-    + "<p>The following patients have unread messages older than " + escalationHours + " hours:</p><ul>";
-  for (var j = 0; j < names.length; j++) {
-    html += "<li>" + names[j] + " (" + Math.round(patients[names[j]]) + " hours)</li>";
-  }
-  html += "</ul>";
-  sendBrandedEmail("both", "ESCALATION: Unread Messages", html);
-}
-
-
-// ---- DAILY 8 AM — BILLING DUE ----
-function checkBillingDue() {
-  var billing = getSheetData("Billing");
-  var today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  for (var i = 0; i < billing.length; i++) {
-    var status = safeString(billing[i][S_STATUS]);
-    if (status !== "Active") continue;
-    var nextPay = parseDate(billing[i][S_NEXTPAYDUE]);
-    if (!nextPay) continue;
-    if (daysBetween(nextPay, today) > 0) {
-      // Past due — update status
-      var bRow = i + 2; // 1-indexed, skip header
-      getSheet("Billing").getRange(bRow, S_STATUS + 1).setValue("Past Due");
-    }
-  }
-}
-
-
-// ---- DAILY 8 AM — LEAD FOLLOW-UPS ----
-function checkLeadFollowUps() {
-  var leads = getSheetData("Leads");
-  var today = new Date();
-  today.setHours(0, 0, 0, 0);
-  var overdue = [];
-
-  for (var i = 0; i < leads.length; i++) {
-    if (safeString(leads[i][LD_CONVERTED]) === "YES") continue;
-    var nextFU = parseDate(leads[i][LD_NEXTFOLLOWUP]);
-    if (!nextFU) continue;
-    if (daysBetween(nextFU, today) >= 0) {
-      overdue.push({
-        name: safeString(leads[i][LD_NAME]),
-        phone: safeString(leads[i][LD_PHONE]),
-        daysOverdue: daysBetween(nextFU, today)
-      });
-    }
-  }
-
-  if (overdue.length > 0) {
-    var html = "<h2 style='color:#E8891A;'>Lead Follow-Ups Due</h2><ul>";
-    for (var j = 0; j < overdue.length; j++) {
-      html += "<li>" + overdue[j].name + " — " + overdue[j].daysOverdue + " day(s) overdue</li>";
-    }
-    html += "</ul>";
-    sendBrandedEmail("tom", "Lead Follow-Ups Due", html);
-  }
-}
-
-
-// ---- DAILY 8 AM — LAB COMPLIANCE ----
-function checkLabCompliance() {
-  var labs = getSheetData("Labs");
-  var today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  for (var i = 0; i < labs.length; i++) {
-    var nextDue = parseDate(labs[i][L_NEXT_DUE]);
-    if (!nextDue) continue;
-    var daysUntil = daysBetween(today, nextDue);
-    if (daysUntil < 0) {
-      var labRow = i + 2;
-      getSheet("Labs").getRange(labRow, L_STATUS + 1).setValue("Overdue");
-    }
-  }
-}
+// Escalation, billing status, lead follow-ups, and lab compliance
+// are now all handled inside dailyDigest() above.
+// No separate emails — one digest covers everything.
 
 
 // ---- MONTHLY CSV IMPORT REMINDER (runs daily, fires on last day of month) ----
