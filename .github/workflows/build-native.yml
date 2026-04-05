@@ -17,6 +17,9 @@ jobs:
   build-android:
     if: ${{ inputs.platform == 'both' || inputs.platform == 'android' }}
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - uses: actions/checkout@v4
 
@@ -49,15 +52,19 @@ jobs:
         working-directory: native
         run: npx cap sync android
 
+      - name: Make gradlew executable
+        working-directory: native/android
+        run: chmod +x ./gradlew
+
       - name: Build Android APK
         working-directory: native/android
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: frame-medicine-android
-          path: native/android/app/build/outputs/apk/release/*.apk
+          path: native/android/app/build/outputs/apk/debug/*.apk
 
   build-ios:
     if: ${{ inputs.platform == 'both' || inputs.platform == 'ios' }}
