@@ -2789,7 +2789,60 @@ function getOverheadItems(month, year) {
 // AUTOMATED TRIGGERS
 // ============================================
 
+function setupSheetHeaders() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var tabs = {
+    "Patients": ["Name","Preferred Name","DOB","Phone","Email","Street","City","State","Zip","Member Since","Medication","Plan","Rate","Term","Membership Start","Contract End","Cycles Left","Outstanding","Check-In Day","Check-In Time","GLP Weight Day","GLP Weight Time","Status","Follow-Up","Notes","Push Enabled","Push Subscription","Referral Source","Referred By","BioToken","BioTokenDate","CommPref"],
+    "Billing": ["Patient","Plan","Rate","Term","Membership Start","Last Payment","Contract End","Cycles Left","Outstanding","Status","Last Shipped","Next Ship","Next Pay Due","Notes"],
+    "Medications": ["Order Date","Patient","Phone","Medication","Formulation","Dose (mg/wk)","Vials","Days Covered","Ship Date","Next Due","Vial Cost","Supplies","Shipping","Total","Monthly Est","Notes"],
+    "Labs": ["Patient","Enrolled","Initial Date","Initial Done","90-Day Due","90-Day Done","180-Day Due","180-Day Done","Annual Due","Annual Done","Next Due","Status","Notes"],
+    "Leads": ["Name","Phone","Email","Source","Date","Interest","Stage","Assigned","Last Contact","Next Follow-Up","Notes","Converted","Converted Date","Patient Name"],
+    "Messages": ["Timestamp","Patient","Phone","Direction","Text","Read","Source","Contact Type"],
+    "Check-Ins": ["Patient","Phone","Medication","Preferred Day","Status","Last Sent","Response","Response Date"],
+    "Check-In Responses": ["Timestamp","Patient","Phone","Medication","Symptoms","Rating","Notes","Response Requested","Admin Notes"],
+    "Weight Log": ["Date","Patient","Medication","Week","Weight","Change","Avg/Week","Total Change","Start Weight","Weeks","Source"],
+    "Refill Log": ["Timestamp","Patient","Medication","Action","Method","Notes"],
+    "Dose History": ["Date","Patient","Medication","Old Dose","New Dose","Changed By","Reason"],
+    "Finance": ["Month","Year","Month Num","Revenue","Med Costs","Overhead","Net Profit","Tom Split","Colin Split","Locked"],
+    "Overhead Items": ["Month","Year","Description","Amount"],
+    "Sales": ["Invoice","Patient","Item","Purchase Date","Total","Status"],
+    "Catalog": ["Medication","Formulation","Vial Cost","mg Per Vial","Notes"],
+    "Settings": ["Key","Value"],
+    "Audit Log": ["Timestamp","Admin","Role","Patient","Action","Details"]
+  };
+
+  var tabNames = Object.keys(tabs);
+  for (var i = 0; i < tabNames.length; i++) {
+    var name = tabNames[i];
+    var existing = null;
+    try { existing = ss.getSheetByName(name); } catch (e) {}
+    if (!existing) {
+      var newSheet = ss.insertSheet(name);
+      newSheet.appendRow(tabs[name]);
+    } else {
+      // Check if header row exists, add if empty
+      var firstRow = existing.getRange(1, 1, 1, tabs[name].length).getValues()[0];
+      var isEmpty = !firstRow[0] || firstRow[0] === "";
+      if (isEmpty) {
+        existing.getRange(1, 1, 1, tabs[name].length).setValues([tabs[name]]);
+      } else {
+        // Extend headers if new columns were added (e.g., BioToken, CommPref)
+        var currentCols = existing.getLastColumn();
+        var expectedCols = tabs[name].length;
+        if (currentCols < expectedCols) {
+          for (var c = currentCols; c < expectedCols; c++) {
+            existing.getRange(1, c + 1).setValue(tabs[name][c]);
+          }
+        }
+      }
+    }
+  }
+}
+
 function setupTriggers() {
+  // Set up all sheet headers first
+  setupSheetHeaders();
+
   // Clear existing triggers
   var triggers = ScriptApp.getProjectTriggers();
   for (var i = 0; i < triggers.length; i++) {
