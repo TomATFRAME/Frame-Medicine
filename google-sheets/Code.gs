@@ -6,13 +6,13 @@
 // ============================================
 
 // ---- SPREADSHEET ID ----
-var SHEET_ID = "YOUR_SHEET_ID_HERE";
+var SHEET_ID = "1I3oJ7UmSF3bIQzV3mafKMvy5eOcNUHwoTApB8SnPP5M";
 
 // ---- TWILIO CREDENTIALS ----
-var TWILIO_SID = "YOUR_TWILIO_SID";
-var TWILIO_TOKEN = "YOUR_TWILIO_TOKEN";
-var TWILIO_NUMBER = "YOUR_TWILIO_NUMBER";
-var TWILIO_VERIFY_SID = "YOUR_TWILIO_VERIFY_SID";
+var TWILIO_SID = "AC02df2316516db1b95448243c98e1e3d1";
+var TWILIO_TOKEN = "594581284b6d54a435a1dc7d613f329c";
+var TWILIO_NUMBER = "+12393726339";
+var TWILIO_VERIFY_SID = "VA3776bfcc6ed5acca7fe089de28793354";
 
 // ---- VAPID KEYS (generate your own for production) ----
 var VAPID_PUBLIC_KEY = "";
@@ -22,7 +22,7 @@ var VAPID_PRIVATE_KEY = "";
 var DEPLOY_URL = "https://script.google.com/macros/s/AKfycbzdSURMk8BPC7cQpHjuQ6y_xLcnFrAW4kQfV9j5Lvv_ute8JTqyvsjjKWAI_uIDXRon/exec";
 
 // ---- APP URLS ----
-var APP_URL = "https://framemedicine.com/app";
+var APP_URL = "https://app.framemedicine.com";
 var ADMIN_URL = "https://framemedicine.com/admin-app";
 
 // ============================================
