@@ -1,0 +1,135 @@
+name: Build Native Apps
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - ios
+          - android
+
+jobs:
+  build-android:
+    if: ${{ inputs.platform == 'both' || inputs.platform == 'android' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install dependencies
+        working-directory: native
+        run: npm install
+
+      - name: Copy web assets
+        working-directory: native
+        run: |
+          cp ../patient-app/index.html www/
+          cp ../patient-app/sw.js www/
+
+      - name: Add Android platform
+        working-directory: native
+        run: npx cap add android
+
+      - name: Sync Capacitor
+        working-directory: native
+        run: npx cap sync android
+
+      - name: Build Android APK
+        working-directory: native/android
+        run: ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: frame-medicine-android
+          path: native/android/app/build/outputs/apk/release/*.apk
+
+  build-ios:
+    if: ${{ inputs.platform == 'both' || inputs.platform == 'ios' }}
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        working-directory: native
+        run: npm install
+
+      - name: Copy web assets
+        working-directory: native
+        run: |
+          cp ../patient-app/index.html www/
+          cp ../patient-app/sw.js www/
+
+      - name: Add iOS platform
+        working-directory: native
+        run: npx cap add ios
+
+      - name: Sync Capacitor
+        working-directory: native
+        run: npx cap sync ios
+
+      - name: Install CocoaPods
+        working-directory: native/ios/App
+        run: pod install
+
+      - name: Build iOS archive
+        working-directory: native/ios
+        run: |
+          xcodebuild -workspace App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath build/FrameMedicine.xcarchive \
+            -destination 'generic/platform=iOS' \
+            -allowProvisioningUpdates \
+            CODE_SIGN_IDENTITY="${{ secrets.IOS_CODE_SIGN_IDENTITY }}" \
+            DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}" \
+            PROVISIONING_PROFILE_SPECIFIER="${{ secrets.IOS_PROVISIONING_PROFILE }}" \
+            archive
+
+      - name: Export IPA
+        working-directory: native/ios
+        run: |
+          cat > ExportOptions.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>teamID</key>
+            <string>${{ secrets.IOS_TEAM_ID }}</string>
+            <key>signingStyle</key>
+            <string>automatic</string>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath build/FrameMedicine.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist ExportOptions.plist
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: frame-medicine-ios
+          path: native/ios/build/export/*.ipa
