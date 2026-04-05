@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#080808">
 <title>FRAME Admin</title>
-<link rel="manifest" href="https://framemedicine.com/wp-content/uploads/admin-manifest.json">
+<link rel="manifest" href="/admin/manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -490,10 +490,10 @@ textarea.input-field{min-height:60px;resize:vertical;display:block}
 <div id="screen-import" class="screen">
   <h1 class="mt-8">CSV Import</h1>
   <p class="text-muted mt-4 mb-16">Drag and drop a CSV file or click to select.</p>
-  <div class="drop-zone" id="drop-zone" onclick="document.getElementById('csv-file').click()">
-    <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSVFile(this.files[0])">
+  <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSVFile(this.files[0])">
+  <div class="drop-zone" id="drop-zone" onclick="openFilePicker()">
     <p style="font-size:32px;margin-bottom:8px">&#128196;</p>
-    <p class="text-muted">Drop CSV here</p>
+    <p class="text-muted">Drop CSV here or tap to select</p>
   </div>
   <div id="import-preview" class="mt-16"></div>
 </div>
@@ -1696,6 +1696,11 @@ function quickLabDone(patient, type) {
 
 
 // ---- CSV IMPORT ----
+function openFilePicker() {
+  document.getElementById("csv-file").value = "";
+  document.getElementById("csv-file").click();
+}
+
 var dropZone = document.getElementById("drop-zone");
 dropZone.addEventListener("dragover", function(e) {
   e.preventDefault(); dropZone.classList.add("dragover");
