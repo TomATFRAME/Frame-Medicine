@@ -746,17 +746,29 @@ function renderPatientList(patients) {
       var p = patients[i];
       var badgeClass = "badge-ok";
       var badgeText = "On Track";
-      if (p.badge === "overdue") { badgeClass = "badge-alert"; badgeText = Math.abs(p.daysLeft) + "d overdue"; }
-      else if (p.badge === "due-soon") { badgeClass = "badge-warn"; badgeText = p.daysLeft + "d left"; }
-      else if (p.daysLeft === null) { badgeClass = "badge-neutral"; badgeText = "No Orders"; }
+      var rowBorder = "border-left:3px solid #4CAF50;";
+      if (p.badge === "overdue") {
+        badgeClass = "badge-alert"; badgeText = Math.abs(p.daysLeft) + "d overdue";
+        rowBorder = "border-left:3px solid #ff4444;";
+      } else if (p.badge === "due-soon") {
+        badgeClass = "badge-warn"; badgeText = p.daysLeft + "d left";
+        rowBorder = "border-left:3px solid #E8891A;";
+      } else if (p.daysLeft === null) {
+        badgeClass = "badge-neutral"; badgeText = "No Orders";
+        rowBorder = "border-left:3px solid rgba(255,255,255,0.15);";
+      }
+      if (p.followUp) {
+        rowBorder = "border-left:3px solid #6B8AFF;";
+      }
 
       var meta = (p.medication || "N/A");
-      if (p.outstanding > 0) meta += " | $" + p.outstanding + " owed";
+      if (p.rate > 0) meta += " | $" + p.rate + "/mo";
+      if (p.outstanding > 0) meta += " | <span style='color:#ff4444'>$" + p.outstanding + " owed</span>";
 
-      html += '<div class="patient-row" onclick="openPatientDetail(\'' + esc(p.name) + '\')">'
+      html += '<div class="patient-row" style="' + rowBorder + 'padding-left:12px;" onclick="openPatientDetail(\'' + esc(p.name) + '\')">'
         + '<div class="patient-info"><div class="patient-name">' + esc(p.name)
-        + (p.followUp ? ' <span style="color:#E8891A;font-size:10px">&#9873;</span>' : '')
-        + '</div><div class="patient-meta">' + esc(meta) + '</div></div>'
+        + (p.followUp ? ' <span style="color:#6B8AFF;font-size:10px">&#9993; FOLLOW-UP</span>' : '')
+        + '</div><div class="patient-meta">' + meta + '</div></div>'
         + '<span class="badge patient-badge ' + badgeClass + '">' + badgeText + '</span></div>';
     }
   }
@@ -776,7 +788,6 @@ function searchPatients() {
 }
 
 function filterPatients(filter) {
-  // Update pills
   var pills = document.querySelectorAll("#dash-pills .pill");
   for (var i = 0; i < pills.length; i++) pills[i].classList.remove("active");
   if (!dashboardData) return;
@@ -788,8 +799,14 @@ function filterPatients(filter) {
     filtered = patients.filter(function(p) { return p.badge === "due-soon"; });
   } else if (filter === "followup") {
     filtered = patients.filter(function(p) { return p.followUp; });
+  } else if (filter === "labs") {
+    filtered = patients.filter(function(p) { return true; }); // all shown, labs badge on dashboard stat
   } else if (filter === "unpaid") {
     filtered = patients.filter(function(p) { return p.outstanding > 0; });
+  } else if (filter === "no-orders") {
+    filtered = patients.filter(function(p) { return p.daysLeft === null; });
+  } else if (filter === "active") {
+    filtered = patients.filter(function(p) { return p.status === "Active" && p.daysLeft !== null; });
   }
   renderPatientList(filtered);
 }

@@ -2976,9 +2976,92 @@ function setupSheetHeaders() {
   }
 }
 
+// Generate Billing + Labs + Check-In rows from existing Patient data
+function syncBillingFromPatients() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var patients = getSheetData("Patients");
+  var billingSheet = getSheet("Billing");
+  var labsSheet = getSheet("Labs");
+  var ciSheet = getSheet("Check-Ins");
+  if (!billingSheet || !labsSheet || !ciSheet) return;
+
+  // Get existing billing/labs/checkin names
+  var existingBilling = {};
+  var bData = getSheetData("Billing");
+  for (var b = 0; b < bData.length; b++) {
+    existingBilling[safeString(bData[b][S_PATIENT]).toLowerCase()] = true;
+  }
+  var existingLabs = {};
+  var lData = getSheetData("Labs");
+  for (var l = 0; l < lData.length; l++) {
+    existingLabs[safeString(lData[l][L_PATIENT]).toLowerCase()] = true;
+  }
+  var existingCI = {};
+  var cData = getSheetData("Check-Ins");
+  for (var c = 0; c < cData.length; c++) {
+    existingCI[safeString(cData[c][0]).toLowerCase()] = true;
+  }
+
+  var added = 0;
+  for (var i = 0; i < patients.length; i++) {
+    var p = patients[i];
+    var name = safeString(p[P_NAME]);
+    var status = safeString(p[P_STATUS]);
+    if (!name || status === "INACTIVE" || status === "Staff") continue;
+
+    var plan = safeString(p[P_PLAN]);
+    var rate = safeNumber(p[P_RATE]);
+    var term = safeNumber(p[P_TERM]);
+    var memStart = parseDate(p[P_MEMSTART]);
+    var contEnd = parseDate(p[P_CONTEND]);
+    var cycles = safeNumber(p[P_CYCLES]);
+    var outstanding = safeNumber(p[P_OUTSTANDING]);
+    var phone = safeString(p[P_PHONE]);
+    var med = safeString(p[P_MED]);
+    var ciDay = safeString(p[P_CIDAY]);
+
+    // Create billing row if missing
+    if (!existingBilling[name.toLowerCase()] && plan) {
+      billingSheet.appendRow([
+        name, plan, rate, term,
+        memStart || new Date(), "", // last payment
+        contEnd || "", cycles, outstanding,
+        rate > 0 ? "Active" : "Individual",
+        "", "", // last shipped, next ship
+        memStart ? addMonths(memStart, 1) : "", // next pay due
+        ""
+      ]);
+      added++;
+    }
+
+    // Create labs row if missing
+    if (!existingLabs[name.toLowerCase()]) {
+      var enrollDate = parseDate(p[P_SINCE]) || new Date();
+      labsSheet.appendRow([
+        name, enrollDate, "", "",
+        addDays(enrollDate, 90), "",
+        addDays(enrollDate, 180), "",
+        addDays(enrollDate, 365), "",
+        addDays(enrollDate, 90),
+        "Awaiting", ""
+      ]);
+    }
+
+    // Create check-in row if missing
+    if (!existingCI[name.toLowerCase()] && med) {
+      ciSheet.appendRow([
+        name, formatPhone(phone), med,
+        ciDay || "Monday", "", "", "", "", "Active"
+      ]);
+    }
+  }
+  return added;
+}
+
 function setupTriggers() {
-  // Set up all sheet headers first
+  // Set up all sheet headers and sync billing
   setupSheetHeaders();
+  syncBillingFromPatients();
 
   // Clear existing triggers
   var triggers = ScriptApp.getProjectTriggers();
