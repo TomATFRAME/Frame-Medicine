@@ -563,18 +563,18 @@ var convoSmsToggle = true;
   if (saved) {
     try {
       adminUser = JSON.parse(saved);
+      if (!adminUser.adminToken) { localStorage.removeItem("frame_admin"); adminUser = null; throw "no token"; }
       showScreen("dashboard");
       document.getElementById("bottom-nav").style.display = "block";
-      loadDashboard();
+      // Deep link: #patient/Name opens patient detail after dashboard loads
+      var hash = window.location.hash;
+      var deepName = (hash.indexOf("#patient/") === 0) ? decodeURIComponent(hash.substring(9)) : null;
+      loadDashboard(function() {
+        if (deepName) openPatientDetail(deepName);
+      });
       // Hide P&L for Colin
       if (adminUser.role === "colin") {
         document.getElementById("nav-pnl").style.display = "none";
-      }
-      // Deep link: #patient/Name opens patient detail
-      var hash = window.location.hash;
-      if (hash.indexOf("#patient/") === 0) {
-        var deepName = decodeURIComponent(hash.substring(9));
-        setTimeout(function() { openPatientDetail(deepName); }, 800);
       }
     } catch (e) {
       localStorage.removeItem("frame_admin");
@@ -693,7 +693,7 @@ function updateNav(active) {
 }
 
 // ---- DASHBOARD ----
-function loadDashboard() {
+function loadDashboard(onReady) {
   var hour = new Date().getHours();
   var g = "Good morning";
   if (hour >= 12) g = "Good afternoon";
@@ -704,7 +704,7 @@ function loadDashboard() {
   });
 
   apiGet("getDashboard", {}, function(d) {
-    if (!d.success) return;
+    if (!d.success) { if (onReady) onReady(); return; }
     dashboardData = d;
     document.getElementById("stat-active").textContent = d.stats.active;
     document.getElementById("stat-overdue").textContent = d.stats.overdue;
@@ -713,6 +713,7 @@ function loadDashboard() {
     document.getElementById("stat-labs").textContent = d.stats.labsDue;
     document.getElementById("stat-unpaid").textContent = d.stats.unpaid;
     renderPatientList(d.patients);
+    if (onReady) onReady();
   });
 
   // Load billing due
@@ -1740,7 +1741,7 @@ function handleCSVFile(file) {
     var isPatient = false;
     var isSales = false;
     for (var i = 0; i < headers.length; i++) {
-      if (headers[i].indexOf("first name") !== -1 || headers[i].indexOf("first_name") !== -1) isPatient = true;
+      if (headers[i].indexOf("first name") !== -1 || headers[i].indexOf("first_name") !== -1 || headers[i] === "firstname") isPatient = true;
       if (headers[i].indexOf("invoice") !== -1) isSales = true;
     }
 

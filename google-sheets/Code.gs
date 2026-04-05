@@ -635,7 +635,7 @@ function handleVerifyBiometric(params) {
         return errorResponse("Token expired. Please sign in with your phone number.");
       }
       var sheet = getSheet("Patients");
-      var data = sheet.getRange(i + 2, 1, 1, 31).getValues()[0];
+      var data = sheet.getRange(i + 2, 1, 1, 32).getValues()[0];
       return successResponse({ verified: true, patient: buildPatientObj(data) });
     }
   }
@@ -1595,6 +1595,9 @@ function handleSavePatient(data) {
     auditLog(data.adminToken, name, "Patient Created", "New patient added");
     return successResponse({ message: "Patient created", isNew: true });
   } else {
+    // Preserve biometric and comm pref columns (29-31) that aren't in the save form
+    var existing = sheet.getRange(existingRow, P_BIOTOKEN + 1, 1, 3).getValues()[0];
+    rowData.push(existing[0], existing[1], existing[2]); // BioToken, BioTokenDate, CommPref
     var range = sheet.getRange(existingRow, 1, 1, rowData.length);
     range.setValues([rowData]);
     auditLog(data.adminToken, name, "Patient Updated", "Record modified");
@@ -2006,7 +2009,8 @@ function handleImportPatients(data) {
       city: p.city || "",
       state: p.state || "",
       zip: p.zip || "",
-      status: "Active - No Med"
+      status: "Active - No Med",
+      adminToken: data.adminToken
     });
     addedCount++;
   }
@@ -2645,9 +2649,14 @@ function logDoseChange(patient, medication, oldDose, newDose, changedBy, reason)
 function auditLog(adminToken, patient, action, details) {
   var sheet = getSheet("Audit Log");
   if (!sheet) {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    sheet = ss.insertSheet("Audit Log");
-    sheet.appendRow(["Timestamp", "Admin", "Role", "Patient", "Action", "Details"]);
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      sheet = ss.insertSheet("Audit Log");
+      sheet.appendRow(["Timestamp", "Admin", "Role", "Patient", "Action", "Details"]);
+    } catch (e) {
+      Logger.log("Failed to create Audit Log: " + e.message);
+      return;
+    }
   }
   var who = "System";
   var role = "";

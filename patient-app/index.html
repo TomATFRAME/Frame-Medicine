@@ -1144,7 +1144,7 @@ function sendPatientMessage() {
   // Optimistic render
   var container = document.getElementById("messages-list");
   var bubble = document.createElement("div");
-  bubble.className = "chat-bubble chat-inbound";
+  bubble.className = "chat-bubble chat-outbound";
   bubble.textContent = text;
   container.appendChild(bubble);
   container.scrollTop = container.scrollHeight;
