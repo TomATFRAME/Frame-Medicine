@@ -1278,8 +1278,10 @@ function handleLogWeight(data) {
   var weeks = Math.max(1, Math.round(daysBetween(firstDate, new Date()) / 7));
   var avgPerWeek = weeks > 0 ? Math.round((totalChange / weeks) * 10) / 10 : 0;
 
+  var logDate = parseDate(data.date) || new Date();
+
   sheet.appendRow([
-    new Date(),
+    logDate,
     name,
     data.medication || "",
     "",

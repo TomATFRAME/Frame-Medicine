@@ -430,7 +430,12 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
   </div>
   <h1>Log Weight</h1>
 
-  <div class="card mt-16" id="weight-last-card" style="display:none">
+  <div class="input-group mt-16">
+    <label class="input-label">Date</label>
+    <input type="date" id="weight-date" class="input-field">
+  </div>
+
+  <div class="card mt-8" id="weight-last-card" style="display:none">
     <div class="flex-between">
       <div>
         <span class="text-muted text-xs">LAST WEIGHT</span>
@@ -1037,6 +1042,12 @@ function submitCheckIn() {
 // ---- WEIGHT ----
 function setupWeight() {
   if (!currentPatient) return;
+  // Default date picker to today
+  var today = new Date();
+  var yyyy = today.getFullYear();
+  var mm = String(today.getMonth() + 1).padStart(2, "0");
+  var dd = String(today.getDate()).padStart(2, "0");
+  document.getElementById("weight-date").value = yyyy + "-" + mm + "-" + dd;
   document.getElementById("weight-value").textContent = weightValue;
 
   apiGet("getWeightLog", { name: currentPatient.name, limit: "8" }, function(data) {
@@ -1070,11 +1081,13 @@ function adjustWeight(delta) {
 }
 
 function submitWeight() {
+  var selectedDate = document.getElementById("weight-date").value;
   apiPost("logWeight", {
     patientName: currentPatient.name,
     phone: currentPatient.phone,
     medication: currentPatient.medication,
     weight: weightValue,
+    date: selectedDate,
     source: "app"
   }, function(data) {
     if (data.success) {
