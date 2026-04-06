@@ -1180,6 +1180,25 @@ function handleGetPnl(params) {
   var tomSplit = safeNumber(getSettingValue("Tom Split")) || 0.25;
   var colinSplit = safeNumber(getSettingValue("Colin Split")) || 0.75;
 
+  // Calculate YTD totals (Jan through current month of requested year)
+  var ytdRevenue = 0, ytdMedCosts = 0, ytdOverhead = 0;
+  var ytdMonths = [];
+  for (var m = 0; m <= requestedMonth; m++) {
+    var mRev = calculateMonthlyRevenue(m, requestedYear);
+    var mCost = calculateMonthlyMedCosts(m, requestedYear);
+    var mOver = calculateMonthlyOverhead(m, requestedYear);
+    ytdRevenue += mRev.total;
+    ytdMedCosts += mCost.total;
+    ytdOverhead += mOver.total;
+    ytdMonths.push({
+      month: monthNames[m].substring(0, 3),
+      revenue: mRev.total,
+      costs: mCost.total + mOver.total,
+      net: mRev.total - mCost.total - mOver.total
+    });
+  }
+  var ytdNet = ytdRevenue - ytdMedCosts - ytdOverhead;
+
   return successResponse({
     month: requestedMonth,
     year: requestedYear,
@@ -1196,7 +1215,14 @@ function handleGetPnl(params) {
     overheadItems: overheadResult.items,
     overheadBase: overheadResult.base,
     orderBreakdown: medCosts.breakdown,
-    revenueBreakdown: revenue.breakdown
+    revenueBreakdown: revenue.breakdown,
+    ytd: {
+      revenue: Math.round(ytdRevenue * 100) / 100,
+      medCosts: Math.round(ytdMedCosts * 100) / 100,
+      overhead: Math.round(ytdOverhead * 100) / 100,
+      netProfit: Math.round(ytdNet * 100) / 100,
+      months: ytdMonths
+    }
   });
 }
 

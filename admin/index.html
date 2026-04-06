@@ -1622,14 +1622,49 @@ function loadPnl() {
     // Revenue breakdown
     if (d.revenueBreakdown) {
       if (d.revenueBreakdown.length > 0) {
+        var costByPt = {};
+        if (d.orderBreakdown) {
+          for (var c = 0; c < d.orderBreakdown.length; c++) {
+            var ob2 = d.orderBreakdown[c];
+            if (!costByPt[ob2.patient]) costByPt[ob2.patient] = 0;
+            costByPt[ob2.patient] += ob2.total;
+          }
+        }
         html += '<div class="card mt-8"><div class="eyebrow">Revenue by Patient</div>';
         for (var k = 0; k < d.revenueBreakdown.length; k++) {
           var rb = d.revenueBreakdown[k];
+          var ptCost = costByPt[rb.patient] || 0;
+          var ptNet = rb.rate - ptCost;
           html += '<div class="flex-between" style="padding:4px 0"><span class="text-sm">' + esc(rb.patient) + '</span>'
-            + '<span class="text-sm">$' + rb.rate + '/mo</span></div>';
+            + '<span class="text-sm">$' + rb.rate + '<span style="color:rgba(255,255,255,0.35);margin-left:6px;">net '
+            + '<span style="color:' + (ptNet >= 0 ? '#4CAF50' : '#ff4444') + '">$' + ptNet.toFixed(2) + '</span></span></span></div>';
         }
         html += '</div>';
       }
+    }
+
+    // YTD bar chart
+    if (d.ytd && d.ytd.months && d.ytd.months.length > 0) {
+      html += '<div class="card mt-8"><div class="eyebrow">Year to Date — ' + d.year + '</div>';
+      html += '<div class="flex-between" style="padding:6px 0"><span class="text-sm">YTD Revenue</span><span class="text-sm pnl-positive">$' + d.ytd.revenue.toFixed(2) + '</span></div>';
+      html += '<div class="flex-between" style="padding:6px 0"><span class="text-sm">YTD Costs</span><span class="text-sm pnl-negative">-$' + (d.ytd.medCosts + d.ytd.overhead).toFixed(2) + '</span></div>';
+      html += '<div class="flex-between" style="padding:6px 0;border-top:1px solid rgba(255,255,255,0.1)"><span class="text-sm" style="font-weight:700">YTD Net</span><span class="text-sm ' + (d.ytd.netProfit >= 0 ? 'pnl-positive' : 'pnl-negative') + '" style="font-weight:700">' + (d.ytd.netProfit >= 0 ? '$' : '-$') + Math.abs(d.ytd.netProfit).toFixed(2) + '</span></div>';
+      var maxVal = 1;
+      for (var b = 0; b < d.ytd.months.length; b++) {
+        if (d.ytd.months[b].revenue > maxVal) maxVal = d.ytd.months[b].revenue;
+      }
+      html += '<div style="display:flex;align-items:flex-end;gap:4px;height:100px;margin-top:16px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)">';
+      for (var b2 = 0; b2 < d.ytd.months.length; b2++) {
+        var mo = d.ytd.months[b2];
+        var barH = Math.max(4, Math.round((mo.revenue / maxVal) * 80));
+        var barColor = mo.net >= 0 ? '#4CAF50' : '#ff4444';
+        html += '<div style="flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">'
+          + '<div style="font-size:9px;color:rgba(255,255,255,0.4);margin-bottom:2px">$' + Math.round(mo.revenue) + '</div>'
+          + '<div style="width:100%;max-width:32px;height:' + barH + 'px;background:' + barColor + ';border-radius:3px 3px 0 0;opacity:0.8"></div>'
+          + '<div style="font-size:9px;color:rgba(255,255,255,0.5);margin-top:4px">' + mo.month + '</div>'
+          + '</div>';
+      }
+      html += '</div></div>';
     }
 
     // Lock button
