@@ -1,0 +1,170 @@
+<div id="frame-get-started" style="max-width:520px;margin:0 auto;padding:24px;font-family:'Barlow',Arial,sans-serif;">
+
+<style>
+#frame-get-started input, #frame-get-started select {
+  width:100%;padding:14px 16px;background:#131313;border:1px solid rgba(255,255,255,0.18);
+  border-radius:6px;color:#fff;font-family:'Barlow',Arial,sans-serif;font-size:14px;
+  margin-bottom:16px;box-sizing:border-box;-webkit-appearance:none;
+}
+#frame-get-started input:focus {
+  border-color:#E8891A;outline:none;background:rgba(232,137,26,0.07);
+}
+#frame-get-started label {
+  display:block;font-family:'Barlow Condensed',Arial,sans-serif;font-size:11px;
+  font-weight:700;letter-spacing:0.18em;text-transform:uppercase;
+  color:rgba(255,255,255,0.6);margin-bottom:6px;
+}
+#frame-get-started .interest-grid {
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;
+}
+#frame-get-started .interest-option {
+  display:flex;align-items:center;gap:10px;padding:12px 14px;
+  background:#131313;border:1px solid rgba(255,255,255,0.18);
+  border-radius:6px;cursor:pointer;transition:all 0.2s;user-select:none;
+}
+#frame-get-started .interest-option:hover {
+  border-color:rgba(232,137,26,0.5);
+}
+#frame-get-started .interest-option.selected {
+  border-color:#E8891A;background:rgba(232,137,26,0.12);
+}
+#frame-get-started .interest-check {
+  width:20px;height:20px;border-radius:4px;border:2px solid rgba(255,255,255,0.3);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;
+}
+#frame-get-started .interest-option.selected .interest-check {
+  background:#E8891A;border-color:#E8891A;
+}
+#frame-get-started .interest-option.selected .interest-check::after {
+  content:'\2713';color:#fff;font-size:12px;font-weight:bold;
+}
+#frame-get-started .interest-label {
+  font-size:13px;color:#fff;font-weight:500;
+}
+#frame-get-started .submit-btn {
+  width:100%;padding:14px;background:#E8891A;color:#fff;border:none;border-radius:6px;
+  font-family:'Barlow Condensed',Arial,sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:0.18em;text-transform:uppercase;cursor:pointer;transition:opacity 0.2s;
+}
+#frame-get-started .submit-btn:hover { opacity:0.9; }
+#frame-get-started .submit-btn:disabled { opacity:0.5;cursor:not-allowed; }
+#frame-get-started .form-msg {
+  text-align:center;padding:12px;border-radius:6px;margin-top:12px;font-size:13px;display:none;
+}
+#frame-get-started .form-error { background:rgba(255,68,68,0.15);color:#ff4444; }
+#frame-get-started .form-success { background:rgba(76,175,80,0.15);color:#4CAF50; }
+</style>
+
+<div style="text-align:center;margin-bottom:24px;">
+  <h2 style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:28px;font-weight:800;text-transform:uppercase;letter-spacing:0.02em;color:#fff;margin:0 0 8px;">Get Started</h2>
+  <p style="color:rgba(255,255,255,0.5);font-size:14px;margin:0;">Tell us what you're interested in and we'll reach out.</p>
+</div>
+
+<form id="frame-lead-form" onsubmit="return submitFrameLead(event)">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div><label>First Name</label><input type="text" id="fl-first" required placeholder="First name"></div>
+    <div><label>Last Name</label><input type="text" id="fl-last" required placeholder="Last name"></div>
+  </div>
+  <label>Phone</label>
+  <input type="tel" id="fl-phone" required placeholder="(904) 555-1234">
+  <label>Email</label>
+  <input type="email" id="fl-email" required placeholder="you@email.com">
+
+  <label>What are you interested in?</label>
+  <div class="interest-grid">
+    <div class="interest-option" onclick="toggleInterest(this)" data-value="Testosterone / TRT">
+      <div class="interest-check"></div>
+      <span class="interest-label">Testosterone / TRT</span>
+    </div>
+    <div class="interest-option" onclick="toggleInterest(this)" data-value="Weight Loss (GLP-1)">
+      <div class="interest-check"></div>
+      <span class="interest-label">Weight Loss (GLP-1)</span>
+    </div>
+    <div class="interest-option" onclick="toggleInterest(this)" data-value="ED / Tadalafil">
+      <div class="interest-check"></div>
+      <span class="interest-label">ED / Tadalafil</span>
+    </div>
+    <div class="interest-option" onclick="toggleInterest(this)" data-value="Hair Loss">
+      <div class="interest-check"></div>
+      <span class="interest-label">Hair Loss</span>
+    </div>
+  </div>
+
+  <button type="submit" class="submit-btn" id="fl-submit">Submit</button>
+  <div class="form-msg form-error" id="fl-error"></div>
+  <div class="form-msg form-success" id="fl-success">Thanks! We'll be in touch within 24 hours.</div>
+</form>
+
+<script>
+function toggleInterest(el) {
+  el.classList.toggle("selected");
+}
+
+function submitFrameLead(e) {
+  e.preventDefault();
+  var btn = document.getElementById("fl-submit");
+  var errEl = document.getElementById("fl-error");
+  var successEl = document.getElementById("fl-success");
+  errEl.style.display = "none";
+  successEl.style.display = "none";
+
+  var first = document.getElementById("fl-first").value.trim();
+  var last = document.getElementById("fl-last").value.trim();
+  var phone = document.getElementById("fl-phone").value.trim();
+  var email = document.getElementById("fl-email").value.trim();
+
+  var interests = [];
+  var selected = document.querySelectorAll("#frame-get-started .interest-option.selected");
+  for (var i = 0; i < selected.length; i++) {
+    interests.push(selected[i].getAttribute("data-value"));
+  }
+
+  if (!first || !last) { errEl.textContent = "Please enter your name."; errEl.style.display = "block"; return false; }
+  if (!phone) { errEl.textContent = "Please enter your phone number."; errEl.style.display = "block"; return false; }
+  if (!email) { errEl.textContent = "Please enter your email."; errEl.style.display = "block"; return false; }
+  if (interests.length === 0) { errEl.textContent = "Please select at least one area of interest."; errEl.style.display = "block"; return false; }
+
+  btn.disabled = true;
+  btn.textContent = "Submitting...";
+
+  var API_URL = "PASTE_YOUR_DEPLOY_URL_HERE";
+
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({
+      action: "saveLead",
+      name: first + " " + last,
+      phone: phone,
+      email: email,
+      source: "Website",
+      interest: interests.join(", "),
+      stage: "Inquiry",
+      assignedTo: "Tom",
+      notes: "Submitted via Get Started page"
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      document.getElementById("frame-lead-form").style.display = "none";
+      successEl.style.display = "block";
+    } else {
+      errEl.textContent = d.error || "Something went wrong. Please call (904) 494-8330.";
+      errEl.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Submit";
+    }
+  })
+  .catch(function() {
+    errEl.textContent = "Connection error. Please call (904) 494-8330.";
+    errEl.style.display = "block";
+    btn.disabled = false;
+    btn.textContent = "Submit";
+  });
+
+  return false;
+}
+</script>
+
+</div>
