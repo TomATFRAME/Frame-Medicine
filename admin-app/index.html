@@ -1051,9 +1051,23 @@ function clearFollowUp() {
 }
 
 function markPaid() {
-  apiPost("markPaid", { name: currentPatientDetail.patient.name }, function(d) {
+  var b = currentPatientDetail.billing || {};
+  var defaultAmt = b.rate || 0;
+  var html = '<div class="modal-header"><h2>Record Payment</h2><button class="modal-close" onclick="closeModal()">&#10005;</button></div>'
+    + '<p class="text-muted">Patient: <strong>' + esc(currentPatientDetail.patient.name) + '</strong></p>'
+    + '<p class="text-muted">Plan rate: $' + defaultAmt + '/mo | Outstanding: $' + (b.outstanding || 0) + '</p>'
+    + ig("Payment Amount ($)", "pay-amount", defaultAmt, "number")
+    + '<button class="btn btn-green btn-block mt-12" onclick="submitPayment()">Record Payment</button>';
+  showModal(html);
+}
+
+function submitPayment() {
+  var amount = Number(gv("pay-amount"));
+  if (!amount || amount <= 0) { showToast("Enter a valid amount"); return; }
+  closeModal();
+  apiPost("markPaid", { name: currentPatientDetail.patient.name, amount: amount }, function(d) {
     if (d.success) {
-      showToast("Payment recorded");
+      showToast("Payment of $" + amount + " recorded");
       openPatientDetail(currentPatientDetail.patient.name);
     } else {
       showToast(d.error || "Error");

@@ -1640,6 +1640,9 @@ function handleMarkPaid(data) {
   var outstanding = safeNumber(bData[S_OUTSTANDING]);
   var today = new Date();
 
+  // Use custom amount if provided, otherwise use plan rate
+  var payAmount = safeNumber(data.amount) || rate;
+
   // Update last payment date
   sheet.getRange(bRow, S_LASTPAY + 1).setValue(today);
   // Decrement cycles
@@ -1648,8 +1651,8 @@ function handleMarkPaid(data) {
   }
   // Update next payment due (1 month from now)
   sheet.getRange(bRow, S_NEXTPAYDUE + 1).setValue(addMonths(today, 1));
-  // Reduce outstanding by rate
-  var newOutstanding = Math.max(0, outstanding - rate);
+  // Reduce outstanding by payment amount
+  var newOutstanding = Math.max(0, outstanding - payAmount);
   sheet.getRange(bRow, S_OUTSTANDING + 1).setValue(newOutstanding);
   // Update status
   if (cycles - 1 <= 0) {
@@ -1663,8 +1666,8 @@ function handleMarkPaid(data) {
     getSheet("Patients").getRange(pRow, P_OUTSTANDING + 1).setValue(newOutstanding);
   }
 
-  appendRefillLog(name, "", "Payment marked ($" + rate + ")", "Admin", "Cycles remaining: " + (cycles - 1));
-  auditLog(data.adminToken, name, "Payment Recorded", "$" + rate + " — cycles left: " + (cycles - 1));
+  appendRefillLog(name, "", "Payment marked ($" + payAmount + ")", "Admin", "Cycles remaining: " + (cycles - 1));
+  auditLog(data.adminToken, name, "Payment Recorded", "$" + payAmount + " — cycles left: " + (cycles - 1));
   return successResponse({
     message: "Payment recorded",
     newOutstanding: newOutstanding,
