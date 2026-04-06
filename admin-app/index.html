@@ -1215,11 +1215,17 @@ function submitNewOrder() {
 // ---- EDIT BILLING MODAL ----
 function showEditBilling() {
   var b = currentPatientDetail.billing || {};
+  // Convert date format from MM/DD/YYYY to YYYY-MM-DD for date input
+  var startVal = b.startDate || "";
+  if (startVal && startVal.indexOf("/") !== -1) {
+    var parts = startVal.split("/");
+    if (parts.length === 3) startVal = parts[2] + "-" + parts[0].padStart(2,"0") + "-" + parts[1].padStart(2,"0");
+  }
   var html = '<div class="modal-header"><h2>Edit Billing</h2><button class="modal-close" onclick="closeModal()">&#10005;</button></div>'
     + ig("Plan", "eb-plan", b.plan || "")
-    + '<div class="grid-2">' + ig("Rate", "eb-rate", b.rate || "", "number") + ig("Term", "eb-term", b.term || "", "number") + '</div>'
-    + ig("Start Date", "eb-start", b.startDate || "", "date")
-    + ig("Outstanding", "eb-outstanding", b.outstanding || "0", "number")
+    + '<div class="grid-2">' + ig("Rate", "eb-rate", b.rate !== undefined ? b.rate : "", "number") + ig("Term", "eb-term", b.term !== undefined ? b.term : "", "number") + '</div>'
+    + ig("Start Date", "eb-start", startVal, "date")
+    + ig("Outstanding", "eb-outstanding", b.outstanding !== undefined ? b.outstanding : "0", "number")
     + '<button class="btn btn-green btn-block mt-12" onclick="saveBillingEdit()">Save</button>';
   showModal(html);
 }
