@@ -3023,7 +3023,7 @@ function syncBillingFromPatients() {
     var med = safeString(p[P_MED]);
     var ciDay = safeString(p[P_CIDAY]);
 
-    // Create billing row if missing
+    // Create or update billing row
     if (!existingBilling[name.toLowerCase()] && plan) {
       billingSheet.appendRow([
         name, plan, rate, term,
@@ -3035,6 +3035,22 @@ function syncBillingFromPatients() {
         ""
       ]);
       added++;
+    } else if (existingBilling[name.toLowerCase()] && rate > 0) {
+      // Update existing billing row if rate is missing
+      var bRow = findRowByValue("Billing", S_PATIENT, name);
+      if (bRow !== -1) {
+        var existingRate = safeNumber(billingSheet.getRange(bRow, S_RATE + 1).getValue());
+        if (existingRate === 0) {
+          billingSheet.getRange(bRow, S_RATE + 1).setValue(rate);
+          billingSheet.getRange(bRow, S_PLAN + 1).setValue(plan);
+          billingSheet.getRange(bRow, S_TERM + 1).setValue(term);
+          if (memStart) billingSheet.getRange(bRow, S_MEMSTART + 1).setValue(memStart);
+          if (contEnd) billingSheet.getRange(bRow, S_CONTEND + 1).setValue(contEnd);
+          if (cycles) billingSheet.getRange(bRow, S_CYCLES + 1).setValue(cycles);
+          billingSheet.getRange(bRow, S_STATUS + 1).setValue("Active");
+          added++;
+        }
+      }
     }
 
     // Create labs row if missing
