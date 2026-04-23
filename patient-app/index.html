@@ -591,11 +591,15 @@ function apiGet(action, params, callback) {
   params.action = action;
   fetch(API_URL, {
     method: "POST",
+    redirect: "follow",
     headers: { "Content-Type": "text/plain" },
     body: JSON.stringify(params)
   })
-    .then(function(r) { return r.json(); })
-    .then(function(data) { callback(data); })
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      try { var data = JSON.parse(text); callback(data); }
+      catch(e) { callback({ success: false, error: "Server error" }); }
+    })
     .catch(function(err) { callback({ success: false, error: err.message }); });
 }
 
