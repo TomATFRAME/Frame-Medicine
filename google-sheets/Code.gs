@@ -582,10 +582,11 @@ function handleLogin(params) {
 
 function handleVerifyOtp(params) {
   var phone = formatPhone(params.phone || "");
-  var code = params.code || "";
+  var code = String(params.code || "").replace(/\D/g, "");
   if (!phone || !code) return errorResponse("Phone and code required");
   var result = checkTwilioVerify(phone, code);
-  if (result.status === "approved") {
+  Logger.log("Verify result for " + phone + ": " + JSON.stringify(result));
+  if (result.status === "approved" || result.valid === true) {
     // Get patient data
     var row = findRowByPhone("Patients", P_PHONE, phone);
     if (row === -1) return errorResponse("Patient not found");
@@ -596,7 +597,7 @@ function handleVerifyOtp(params) {
       patient: buildPatientObj(data)
     });
   }
-  return errorResponse("Invalid code");
+  return errorResponse("Invalid code — " + (result.status || result.message || "verification failed"));
 }
 
 function handleSaveBiometric(data) {
