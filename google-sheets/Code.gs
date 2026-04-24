@@ -485,7 +485,8 @@ function doPost(e) {
         "newOrder","markLabDone","sendLabReminder","saveLead","convertLead",
         "updateLeadStage","importPatients","importSales","updateSettings",
         "lockMonth","updateOverhead","addOverheadItem","removeOverheadItem",
-        "clearFollowUp","saveNotes","logDoseChange","diffPatients","diffSales"];
+        "clearFollowUp","saveNotes","logDoseChange","diffPatients","diffSales",
+        "sendLoginLink"];
       if (adminWriteActions.indexOf(action) !== -1) {
         var adminWriteErr = requireAdmin(data);
         if (adminWriteErr) return adminWriteErr;
@@ -497,6 +498,7 @@ function doPost(e) {
       if (action === "newOrder") return handleNewOrder(data);
       if (action === "markLabDone") return handleMarkLabDone(data);
       if (action === "sendLabReminder") return handleSendLabReminder(data);
+      if (action === "sendLoginLink") return handleSendLoginLink(data);
       if (action === "saveLead") return handleSaveLead(data);
       if (action === "convertLead") return handleConvertLead(data);
       if (action === "updateLeadStage") return handleUpdateLeadStage(data);
@@ -1858,6 +1860,32 @@ function handleSendLabReminder(data) {
     msgSheet.appendRow([new Date(), name, formatPhone(phone), "outbound", message, "", "admin", "patient"]);
   }
   return successResponse({ message: "Lab reminder sent" });
+}
+
+function handleSendLoginLink(data) {
+  var name = data.name || data.patientName || "";
+  var phone = formatPhone(data.phone || "");
+  if (!phone) return errorResponse("Phone required");
+  var appUrl = safeString(getSettingValue("Patient App URL")) || "https://app.framemedicine.com";
+  var greeting = name ? ("Hi " + name.split(" ")[0] + ", ") : "";
+  var body = greeting + "here's your secure login link for FRAME Medicine: " + appUrl + " — enter your phone number and we'll text you a code to sign in.";
+  sendTwilioSMS(phone, body);
+  // Log to Messages tab so it shows up in conversation history
+  var msgSheet = getSheet("Messages");
+  if (msgSheet) {
+    msgSheet.appendRow([
+      new Date(),
+      name,
+      phone,
+      "outbound",
+      body,
+      "",
+      "login-link",
+      "patient"
+    ]);
+  }
+  auditLog(data.adminToken, name, "Login Link Sent", "Sent to " + phone);
+  return successResponse({ message: "Login link sent" });
 }
 
 function handleSaveLead(data) {

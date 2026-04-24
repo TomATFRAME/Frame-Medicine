@@ -911,7 +911,8 @@ function renderBillingTab(b) {
     + '<div class="flex-between mt-4"><span class="text-sm text-muted">Status</span><span class="badge" style="color:' + statusColor + '">' + b.status + '</span></div>'
     + '<div class="flex-between mt-12">'
     + '<button class="btn btn-green btn-sm" onclick="markPaid()">Mark as Paid</button>'
-    + '<button class="btn btn-ghost btn-sm" onclick="showEditBilling()">Edit Billing</button></div>';
+    + '<button class="btn btn-ghost btn-sm" onclick="showEditBilling()">Edit Billing</button></div>'
+    + '<div class="mt-8"><button class="btn btn-ghost btn-sm btn-block" onclick="sendLoginLink()">Send Login Link (SMS)</button></div>';
 }
 
 function renderOrdersTab(orders) {
@@ -1046,6 +1047,19 @@ function clearFollowUp() {
     if (d.success) {
       document.getElementById("detail-followup").style.display = "none";
       showToast("Follow-up cleared");
+    }
+  });
+}
+
+function sendLoginLink() {
+  if (!currentPatientDetail || !currentPatientDetail.patient) return;
+  var p = currentPatientDetail.patient;
+  if (!confirm("Send login-link SMS to " + p.name + " at " + p.phone + "?")) return;
+  apiPost("sendLoginLink", { name: p.name, phone: p.phone }, function(d) {
+    if (d && d.success) {
+      showToast("Login link sent");
+    } else {
+      showToast((d && d.error) || "Send failed");
     }
   });
 }
