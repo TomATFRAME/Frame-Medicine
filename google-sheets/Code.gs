@@ -597,7 +597,7 @@ function handleVerifyOtp(params) {
       patient: buildPatientObj(data)
     });
   }
-  return errorResponse("Invalid code — " + (result.status || result.message || "verification failed"));
+  return errorResponse("Invalid code — " + (result.status || result.message || "verification failed") + " | DEBUG: sid=" + String(TWILIO_VERIFY_SID).substring(0,6) + "... url-ok code=" + (result.code || "?") + " msg=" + (result.message || "").substring(0,120));
 }
 
 function handleSaveBiometric(data) {
