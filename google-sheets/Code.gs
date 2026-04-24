@@ -299,7 +299,7 @@ function sendTwilioVerify(phone) {
 }
 
 function checkTwilioVerify(phone, code) {
-  var url = "https://verify.twilio.com/v2/Services/" + TWILIO_VERIFY_SID + "/VerificationChecks";
+  var url = "https://verify.twilio.com/v2/Services/" + TWILIO_VERIFY_SID + "/VerificationCheck";
   var payload = {
     To: formatPhone(phone),
     Code: code
