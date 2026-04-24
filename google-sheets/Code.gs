@@ -329,6 +329,15 @@ function patientLinkHtml(name) {
   return '<a href="' + patientLink(name) + '" style="color:#E8891A;text-decoration:none;font-weight:600;">' + name + '</a>';
 }
 
+// ---- Patient notification kill-switch ----
+// Until Settings 'Patient Notifications' is set to 'ON' (case-insensitive),
+// ALL patient-facing automated texts silently skip. Admin-only emails
+// (daily digest, import reminders) always run.
+function patientNotificationsEnabled() {
+  var val = safeString(getSettingValue("Patient Notifications")).toLowerCase().trim();
+  return val === "on" || val === "yes" || val === "true" || val === "enabled";
+}
+
 function sendBrandedEmail(to, subject, htmlBody) {
   var tomEmail = safeString(getSettingValue("Tom Email"));
   var colinEmail = safeString(getSettingValue("Colin Email"));
@@ -454,6 +463,7 @@ function doGet(e) {
     if (action === "getCatalog") return handleGetCatalog(e.parameter);
     if (action === "getRefillLog") return handleGetRefillLog(e.parameter);
     if (action === "getDoseHistory") return handleGetDoseHistory(e.parameter);
+    if (action === "previewNotifications") return handlePreviewNotifications(e.parameter);
     return errorResponse("Unknown action: " + action);
   } catch (err) {
     return errorResponse("doGet error: " + err.message);
@@ -534,7 +544,7 @@ function doPost(e) {
       if (action === "adminLogin") return handleAdminLogin(data);
       var adminActions = ["getDashboard","getPatientDetail","getLeads","getLeadDetail",
         "getInbox","getConversation","getPnl","getSettings","getLabsDashboard",
-        "getBillingDue","getCatalog","getRefillLog","getDoseHistory"];
+        "getBillingDue","getCatalog","getRefillLog","getDoseHistory","previewNotifications"];
       if (adminActions.indexOf(action) !== -1) {
         var authErr = requireAdmin(data);
         if (authErr) return authErr;
@@ -552,6 +562,7 @@ function doPost(e) {
       if (action === "getCatalog") return handleGetCatalog(data);
       if (action === "getRefillLog") return handleGetRefillLog(data);
       if (action === "getDoseHistory") return handleGetDoseHistory(data);
+      if (action === "previewNotifications") return handlePreviewNotifications(data);
 
       return errorResponse("Unknown action: " + action);
     } else {
@@ -3201,6 +3212,89 @@ function setupTriggers() {
 }
 
 
+// ---- PREVIEW TODAY'S NOTIFICATIONS (dry run, no sends) ----
+// Returns a list of exactly what dailyRefillAlerts / dailyCheckIns / dailyWeightTexts
+// would send TODAY if the kill-switch were ON. Used by admin to audit before go-live.
+function previewTodayNotifications() {
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  var dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var todayDay = dayNames[today.getDay()];
+  var patients = getSheetData("Patients");
+  var allOrders = getAllPatientOrders();
+  var alertDays = safeNumber(getSettingValue("Refill Alert Days Before Due")) || 14;
+  var out = { refills: [], checkIns: [], weighIns: [] };
+
+  // Refill alerts
+  for (var i = 0; i < patients.length; i++) {
+    if (safeString(patients[i][P_STATUS]) !== "Active") continue;
+    var name = safeString(patients[i][P_NAME]);
+    var phone = safeString(patients[i][P_PHONE]);
+    var preferred = safeString(patients[i][P_PREFERRED]) || name.split(" ")[0];
+    var orderEntry = allOrders[name.toLowerCase()];
+    var orders = orderEntry ? orderEntry.orders : [];
+    if (orders.length === 0) continue;
+    var nextDue = parseDate(orders[0].nextDue);
+    if (!nextDue) continue;
+    var daysLeft = daysBetween(today, nextDue);
+    var msg = null;
+    if (daysLeft === alertDays || daysLeft === 7 || daysLeft === 3) {
+      msg = "Hi " + preferred + ", your " + safeString(patients[i][P_MED])
+        + " supply is running low (" + daysLeft + " days remaining). "
+        + "Reply YES to confirm your refill or visit " + APP_URL;
+    } else if (daysLeft < 0 && (Math.abs(daysLeft) % 3 === 0)) {
+      msg = "Hi " + preferred + ", you are " + Math.abs(daysLeft)
+        + " days past your " + safeString(patients[i][P_MED])
+        + " refill date. Please confirm your refill: " + APP_URL
+        + " or reply YES to this text.";
+    }
+    if (msg) out.refills.push({ name: name, phone: phone, daysLeft: daysLeft, message: msg });
+  }
+
+  // Monthly check-ins
+  var schedule = getSheetData("Check-Ins");
+  for (var c = 0; c < schedule.length; c++) {
+    var preferredDay = safeString(schedule[c][CIS_DAY]);
+    if (preferredDay.toLowerCase() !== todayDay.toLowerCase()) continue;
+    if (safeString(schedule[c][CIS_STATUS]) !== "Active") continue;
+    var lastSent = parseDate(schedule[c][CIS_LASTSENT]);
+    if (lastSent && daysBetween(lastSent, today) < 25) continue;
+    var cPatient = safeString(schedule[c][CIS_PATIENT]);
+    var cPhone = safeString(schedule[c][CIS_PHONE]);
+    var cMed = safeString(schedule[c][CIS_MED]);
+    var cMsg = "Hi " + cPatient.split(" ")[0] + ", it's time for your monthly "
+      + cMed + " check-in. How are you feeling? Tap here to complete it: " + APP_URL;
+    out.checkIns.push({ name: cPatient, phone: cPhone, message: cMsg });
+  }
+
+  // Weight texts (GLP-1 patients on their day)
+  for (var w = 0; w < patients.length; w++) {
+    var glpDay = safeString(patients[w][P_GLPDAY]);
+    if (!glpDay || glpDay.toLowerCase() !== todayDay.toLowerCase()) continue;
+    if (safeString(patients[w][P_STATUS]) !== "Active") continue;
+    var wName = safeString(patients[w][P_NAME]);
+    var wPhone = safeString(patients[w][P_PHONE]);
+    var wPref = safeString(patients[w][P_PREFERRED]) || wName.split(" ")[0];
+    var wMsg = "Hi " + wPref + ", time for your weekly weigh-in! "
+      + "Log your weight in the app: " + APP_URL;
+    out.weighIns.push({ name: wName, phone: wPhone, message: wMsg });
+  }
+
+  return out;
+}
+
+function handlePreviewNotifications(data) {
+  var result = previewTodayNotifications();
+  var enabled = patientNotificationsEnabled();
+  return successResponse({
+    enabled: enabled,
+    refills: result.refills,
+    checkIns: result.checkIns,
+    weighIns: result.weighIns,
+    totalCount: result.refills.length + result.checkIns.length + result.weighIns.length
+  });
+}
+
 // ---- DAILY DIGEST (9 AM) — ONE email with everything ----
 function dailyDigest() {
   var patients = getSheetData("Patients");
@@ -3443,6 +3537,7 @@ function dailyDigest() {
 
 // ---- DAILY REFILL ALERTS (12 PM) ----
 function dailyRefillAlerts() {
+  if (!patientNotificationsEnabled()) return;
   var patients = getSheetData("Patients");
   var today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -3486,6 +3581,7 @@ function dailyRefillAlerts() {
 
 // ---- DAILY CHECK-INS (12 PM) ----
 function dailyCheckIns() {
+  if (!patientNotificationsEnabled()) return;
   var schedule = getSheetData("Check-Ins");
   var today = new Date();
   var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -3521,6 +3617,7 @@ function dailyCheckIns() {
 
 // ---- DAILY WEIGHT TEXTS (12 PM, GLP-1 only) ----
 function dailyWeightTexts() {
+  if (!patientNotificationsEnabled()) return;
   var patients = getSheetData("Patients");
   var today = new Date();
   var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
