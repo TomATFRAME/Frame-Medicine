@@ -2869,15 +2869,16 @@ function calculateMonthlyRevenue(month, year) {
   var billing = getSheetData("Billing");
   var total = 0;
   var breakdown = [];
+  var monthStart = new Date(year, month, 1);
+  var monthEnd = new Date(year, month + 1, 0);
 
+  // 1) Recurring membership revenue from the Billing tab
   for (var i = 0; i < billing.length; i++) {
     var status = safeString(billing[i][S_STATUS]);
     if (status !== "Active" && status !== "Past Due") continue;
 
     var start = parseDate(billing[i][S_MEMSTART]);
     var end = parseDate(billing[i][S_CONTEND]);
-    var monthStart = new Date(year, month, 1);
-    var monthEnd = new Date(year, month + 1, 0);
 
     // Check if billing was active during this month
     if (start && start <= monthEnd) {
@@ -2887,11 +2888,33 @@ function calculateMonthlyRevenue(month, year) {
         breakdown.push({
           patient: safeString(billing[i][S_PATIENT]),
           plan: safeString(billing[i][S_PLAN]),
-          rate: rate
+          rate: rate,
+          source: "membership"
         });
       }
     }
   }
+
+  // 2) One-off sales from the Sales tab (JaneApp imports) — Paid only, in-month
+  // Sales columns: 0=Invoice, 1=Patient, 2=Item, 3=Purchase Date, 4=Total, 5=Status
+  var sales = getSheetData("Sales");
+  for (var j = 0; j < sales.length; j++) {
+    var saleDate = parseDate(sales[j][3]);
+    if (!saleDate) continue;
+    if (saleDate < monthStart || saleDate > monthEnd) continue;
+    var saleStatus = safeString(sales[j][5]).toLowerCase();
+    if (saleStatus.indexOf("paid") === -1 && saleStatus !== "applied" && saleStatus !== "completed") continue;
+    var saleAmount = safeNumber(sales[j][4]);
+    if (saleAmount <= 0) continue;
+    total += saleAmount;
+    breakdown.push({
+      patient: safeString(sales[j][1]),
+      plan: safeString(sales[j][2]),
+      rate: saleAmount,
+      source: "sale"
+    });
+  }
+
   return { total: total, breakdown: breakdown };
 }
 
