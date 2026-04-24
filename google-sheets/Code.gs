@@ -3288,9 +3288,10 @@ function dailyDigest() {
     return s;
   }
 
-  function itemRow(name, detail, med) {
+  function itemRow(name, detail, med, isLast) {
+    var border = isLast ? "" : "border-bottom:1px solid rgba(255,255,255,0.06);";
     var s = "";
-    s += "<table role='presentation' cellpadding='0' cellspacing='0' border='0' width='100%' style='border-bottom:1px solid rgba(255,255,255,0.06);'>";
+    s += "<table role='presentation' cellpadding='0' cellspacing='0' border='0' width='100%' style='" + border + "'>";
     s += "<tr>";
     s += "<td style='padding:8px 0;font-family:Arial,sans-serif;font-size:14px;color:#ffffff;font-weight:600;'>" + patientLinkHtml(name) + "</td>";
     s += "<td style='padding:8px 0;font-family:Arial,sans-serif;font-size:12px;color:rgba(255,255,255,0.5);text-align:right;'>";
@@ -3305,10 +3306,9 @@ function dailyDigest() {
   function itemsList(items, showMed) {
     var b = "";
     for (var x = 0; x < items.length; x++) {
-      b += itemRow(items[x].name, items[x].detail, showMed ? (items[x].med || "") : "");
+      b += itemRow(items[x].name, items[x].detail, showMed ? (items[x].med || "") : "", x === items.length - 1);
     }
-    // Strip final border (last row)
-    return b.replace(/border-bottom:1px solid rgba\(255,255,255,0\.06\);'>(?![\s\S]*border-bottom)/, "'>");
+    return b;
   }
 
   function nameList(names) {
