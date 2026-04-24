@@ -2141,6 +2141,17 @@ function loadSettings() {
       + '<div class="text-xs text-muted mt-8" style="line-height:1.4">To flip ON/OFF: open the Google Sheet → Settings tab → row 'Patient Notifications' → set value to ON or OFF.</div>'
       + '</div>';
 
+    var testPhone = (s["Test Mode Phone"] || "").toString().trim();
+    var testMode = !!testPhone;
+    var tmColor = testMode ? "#E8891A" : "rgba(255,255,255,0.5)";
+    var tmLabel = testMode ? ("ON → " + testPhone) : "OFF";
+    html += '<div class="card"><div class="card-accent" style="background:' + (testMode ? "#E8891A" : "rgba(255,255,255,0.15)") + '"></div><div class="eyebrow" style="color:' + tmColor + '">Test Mode</div>'
+      + '<div class="flex-between mt-4"><span class="text-sm">Redirect all outbound SMS</span>'
+      + '<span class="text-sm" style="color:' + tmColor + ';font-weight:700">' + tmLabel + '</span></div>'
+      + '<div class="text-xs text-muted mt-8" style="line-height:1.4">When a phone number is set, EVERY outbound text (automated + manual) is redirected to that number with a [TEST→original-number] prefix. Set to your own number to preview what patients would see.</div>'
+      + '<div class="text-xs text-muted mt-8" style="line-height:1.4">To enable: Google Sheet → Settings tab → row 'Test Mode Phone' → enter a phone number. To disable: clear that cell.</div>'
+      + '</div>';
+
     html += '<div class="card"><div class="card-accent"></div><div class="eyebrow">System</div>'
       + '<div class="flex-between"><span class="text-sm">Twilio Number</span><span class="text-sm">' + (s["Twilio Number"] || "") + '</span></div></div>';
 

@@ -262,6 +262,19 @@ function errorResponse(msg) {
 // ============================================
 
 function sendTwilioSMS(to, body) {
+  // --- Test Mode redirect ---
+  // If Settings 'Test Mode Phone' is set to a valid phone number, EVERY outbound
+  // SMS gets redirected to that number and the body is prefixed with a marker
+  // showing the original intended recipient. Lets admins preview what patients
+  // would actually receive before going live. To disable test mode, leave
+  // Settings 'Test Mode Phone' blank.
+  var testPhoneRaw = safeString(getSettingValue("Test Mode Phone")).trim();
+  if (testPhoneRaw) {
+    var origTo = formatPhone(to);
+    var testTo = formatPhone(testPhoneRaw);
+    body = "[TEST→" + origTo + "] " + body;
+    to = testTo;
+  }
   var url = "https://api.twilio.com/2010-04-01/Accounts/" + TWILIO_SID + "/Messages.json";
   var payload = {
     To: formatPhone(to),
@@ -327,6 +340,11 @@ function patientLink(name) {
 
 function patientLinkHtml(name) {
   return '<a href="' + patientLink(name) + '" style="color:#E8891A;text-decoration:none;font-weight:600;">' + name + '</a>';
+}
+
+// ---- Test Mode helpers ----
+function testModePhone() {
+  return safeString(getSettingValue("Test Mode Phone")).trim();
 }
 
 // ---- Patient notification kill-switch ----
