@@ -595,12 +595,19 @@ function apiGet(action, params, callback) {
     headers: { "Content-Type": "text/plain" },
     body: JSON.stringify(params)
   })
-    .then(function(r) { return r.text(); })
-    .then(function(text) {
-      try { var data = JSON.parse(text); callback(data); }
-      catch(e) { callback({ success: false, error: "Server error" }); }
+    .then(function(r) {
+      var status = r.status;
+      return r.text().then(function(text) { return { status: status, text: text }; });
     })
-    .catch(function(err) { callback({ success: false, error: err.message }); });
+    .then(function(res) {
+      if (res.status !== 200) {
+        callback({ success: false, error: "HTTP " + res.status + ": " + (res.text || "").substring(0, 120) });
+        return;
+      }
+      try { var data = JSON.parse(res.text); callback(data); }
+      catch(e) { callback({ success: false, error: "Parse: " + (res.text || "empty").substring(0, 120) }); }
+    })
+    .catch(function(err) { callback({ success: false, error: "Net: " + (err && err.message || "unknown") }); });
 }
 
 function apiPost(action, body, callback) {
