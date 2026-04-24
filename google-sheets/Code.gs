@@ -3203,27 +3203,19 @@ function dailyDigest() {
     if (safeString(patients[i][P_FOLLOWUP]) === "YES") followUps.push(name);
   }
 
-  // Labs
+  // Labs (minimal — just counts, detail demoted)
   var labs = getSheetData("Labs");
-  var labsOverdue = [];
-  var labsDueSoon = [];
+  var labsOverdueCount = 0;
+  var labsDueSoonCount = 0;
   for (var j = 0; j < labs.length; j++) {
-    var labPatient = safeString(labs[j][L_PATIENT]);
     var labNext = parseDate(labs[j][L_NEXT_DUE]);
     if (!labNext) continue;
     var labDays = daysBetween(today, labNext);
-    var labType = "Labs";
-    if (!labs[j][L_INIT_DONE]) labType = "Initial Labs";
-    else if (!labs[j][L_90_DONE]) labType = "90-Day Labs";
-    else if (!labs[j][L_180_DONE]) labType = "180-Day Labs";
-    else if (!labs[j][L_ANN_DONE]) labType = "Annual Labs";
-
     if (labDays < 0) {
-      labsOverdue.push({ name: labPatient, detail: Math.abs(labDays) + "d overdue", type: labType });
-      // Also update status
+      labsOverdueCount++;
       getSheet("Labs").getRange(j + 2, L_STATUS + 1).setValue("Overdue");
     } else if (labDays <= 30) {
-      labsDueSoon.push({ name: labPatient, detail: labDays + "d", type: labType });
+      labsDueSoonCount++;
     }
   }
 
@@ -3239,10 +3231,10 @@ function dailyDigest() {
     if (!nextPay) continue;
     var bDays = daysBetween(today, nextPay);
     if (bDays < 0) {
-      billingPastDue.push({ name: bPatient, detail: "$" + safeNumber(billing[k][S_OUTSTANDING]) + " — " + Math.abs(bDays) + "d overdue" });
+      billingPastDue.push({ name: bPatient, detail: "$" + safeNumber(billing[k][S_OUTSTANDING]) + " • " + Math.abs(bDays) + "d overdue" });
       getSheet("Billing").getRange(k + 2, S_STATUS + 1).setValue("Past Due");
     } else if (bDays <= 7) {
-      billingDue.push({ name: bPatient, detail: "$" + safeNumber(billing[k][S_RATE]) + " due in " + bDays + "d" });
+      billingDue.push({ name: bPatient, detail: "$" + safeNumber(billing[k][S_RATE]) + " in " + bDays + "d" });
     }
   }
 
@@ -3259,7 +3251,7 @@ function dailyDigest() {
     var hoursSince = (now - ts) / 3600000;
     if (hoursSince >= escalationHours) {
       var msgName = safeString(messages[m][MSG_PATIENT]);
-      unreadEscalation.push({ name: msgName, detail: Math.round(hoursSince) + " hrs unread" });
+      unreadEscalation.push({ name: msgName, detail: Math.round(hoursSince) + "h unread" });
     }
   }
 
@@ -3275,70 +3267,149 @@ function dailyDigest() {
     }
   }
 
-  // ---- Build HTML ----
-  var sectionStyle = "border-radius:8px;padding:16px;margin-bottom:16px;";
-  var sectionTitleStyle = "font-family:Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin:0 0 12px 0;";
-  var itemStyle = "padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:14px;";
-  var detailStyle = "color:rgba(255,255,255,0.5);font-size:12px;margin-left:8px;";
+  // ---- Build HTML (card/box layout, matches patient homescreen language) ----
+  // Color palette (same as patient app):
+  //   bg:      #080808 (wrapper) / #131313 (card)
+  //   orange:  #E8891A (accent, upcoming)
+  //   red:     #ff4444 (urgent)
+  //   green:   #4CAF50 (ok)
+  //   text:    #ffffff / rgba(255,255,255,0.6) muted
 
-  function buildSection(title, color, bgColor, items, showType) {
-    if (items.length === 0) return "";
-    var s = "<div style='" + sectionStyle + "background:" + bgColor + ";border-left:4px solid " + color + ";'>";
-    s += "<h3 style='" + sectionTitleStyle + "color:" + color + ";'>" + title + " (" + items.length + ")</h3>";
-    for (var x = 0; x < items.length; x++) {
-      s += "<div style='" + itemStyle + "'>" + patientLinkHtml(items[x].name);
-      if (showType && items[x].type) s += "<span style='" + detailStyle + "'>" + items[x].type + "</span>";
-      s += "<span style='" + detailStyle + "'>" + items[x].detail + "</span>";
-      if (items[x].med) s += "<span style='" + detailStyle + "'>" + items[x].med + "</span>";
-      s += "</div>";
-    }
-    s += "</div>";
+  function card(accentColor, eyebrow, body) {
+    // table-based so it renders in Outlook as well as webmail
+    var s = "";
+    s += "<table role='presentation' cellpadding='0' cellspacing='0' border='0' width='100%' style='margin:0 0 14px 0;background:#131313;border-radius:8px;border:1px solid rgba(255,255,255,0.06);overflow:hidden;'>";
+    s += "<tr><td style='height:3px;background:" + accentColor + ";font-size:1px;line-height:3px;'>&nbsp;</td></tr>";
+    s += "<tr><td style='padding:14px 16px 16px 16px;'>";
+    s += "<div style='font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:" + accentColor + ";margin:0 0 10px 0;'>" + eyebrow + "</div>";
+    s += body;
+    s += "</td></tr>";
+    s += "</table>";
     return s;
   }
 
-  var html = "<h1 style='font-family:Arial,sans-serif;font-size:22px;font-weight:800;color:#ffffff;margin:0 0 4px 0;'>Daily Digest</h1>";
-  html += "<p style='color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 20px 0;'>" + formatDateStr(today) + "</p>";
+  function itemRow(name, detail, med) {
+    var s = "";
+    s += "<table role='presentation' cellpadding='0' cellspacing='0' border='0' width='100%' style='border-bottom:1px solid rgba(255,255,255,0.06);'>";
+    s += "<tr>";
+    s += "<td style='padding:8px 0;font-family:Arial,sans-serif;font-size:14px;color:#ffffff;font-weight:600;'>" + patientLinkHtml(name) + "</td>";
+    s += "<td style='padding:8px 0;font-family:Arial,sans-serif;font-size:12px;color:rgba(255,255,255,0.5);text-align:right;'>";
+    if (med) s += "<span style='margin-right:10px;'>" + med + "</span>";
+    s += detail;
+    s += "</td>";
+    s += "</tr>";
+    s += "</table>";
+    return s;
+  }
 
-  // Summary bar
-  var totalUrgent = overdue.length + labsOverdue.length + billingPastDue.length + unreadEscalation.length;
-  var totalWarning = dueSoon.length + labsDueSoon.length + billingDue.length + followUps.length;
-  html += "<div style='" + sectionStyle + "background:rgba(255,255,255,0.04);text-align:center;'>";
-  html += "<span style='font-size:28px;font-weight:800;color:" + (totalUrgent > 0 ? "#ff4444" : "#4CAF50") + ";'>" + totalUrgent + "</span>";
-  html += "<span style='color:rgba(255,255,255,0.5);font-size:12px;margin:0 16px;'>URGENT</span>";
-  html += "<span style='font-size:28px;font-weight:800;color:" + (totalWarning > 0 ? "#E8891A" : "#4CAF50") + ";'>" + totalWarning + "</span>";
-  html += "<span style='color:rgba(255,255,255,0.5);font-size:12px;margin:0 16px;'>UPCOMING</span>";
-  html += "<span style='font-size:28px;font-weight:800;color:#4CAF50;'>" + patients.length + "</span>";
-  html += "<span style='color:rgba(255,255,255,0.5);font-size:12px;'>PATIENTS</span>";
+  function itemsList(items, showMed) {
+    var b = "";
+    for (var x = 0; x < items.length; x++) {
+      b += itemRow(items[x].name, items[x].detail, showMed ? (items[x].med || "") : "");
+    }
+    // Strip final border (last row)
+    return b.replace(/border-bottom:1px solid rgba\(255,255,255,0\.06\);'>(?![\s\S]*border-bottom)/, "'>");
+  }
+
+  function nameList(names) {
+    var items = [];
+    for (var x = 0; x < names.length; x++) items.push({ name: names[x], detail: "flagged" });
+    return itemsList(items, false);
+  }
+
+  var html = "";
+
+  // ---- HEADER ----
+  html += "<div style='font-family:Arial,sans-serif;text-align:center;padding:4px 0 20px 0;'>";
+  html += "<div style='font-size:10px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:#E8891A;margin-bottom:6px;'>Daily Digest</div>";
+  html += "<div style='font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.01em;'>" + formatDateStr(today) + "</div>";
   html += "</div>";
 
-  // Red sections — urgent
-  html += buildSection("OVERDUE REFILLS", "#ff4444", "rgba(255,68,68,0.08)", overdue, false);
-  html += buildSection("LABS OVERDUE", "#ff4444", "rgba(255,68,68,0.08)", labsOverdue, true);
-  html += buildSection("BILLING PAST DUE", "#ff4444", "rgba(255,68,68,0.08)", billingPastDue, false);
-  html += buildSection("UNREAD MESSAGES", "#ff4444", "rgba(255,68,68,0.08)", unreadEscalation, false);
+  // ---- SUMMARY TILES (3 big stat cards side-by-side) ----
+  var totalUrgent = overdue.length + billingPastDue.length + unreadEscalation.length;
+  var totalWarning = dueSoon.length + billingDue.length + followUps.length + leadFollowUps.length;
+  var activePatients = 0;
+  for (var pi = 0; pi < patients.length; pi++) {
+    var ps = safeString(patients[pi][P_STATUS]);
+    if (ps && ps !== "INACTIVE" && ps !== "Staff") activePatients++;
+  }
 
-  // Orange sections — upcoming
-  html += buildSection("REFILLS DUE SOON", "#E8891A", "rgba(232,137,26,0.08)", dueSoon, false);
-  html += buildSection("LABS DUE SOON", "#E8891A", "rgba(232,137,26,0.08)", labsDueSoon, true);
-  html += buildSection("BILLING DUE", "#E8891A", "rgba(232,137,26,0.08)", billingDue, false);
-  html += buildSection("FOLLOW-UPS", "#E8891A", "rgba(232,137,26,0.08)", followUps.map(function(n) { return { name: n, detail: "flagged" }; }), false);
+  html += "<table role='presentation' cellpadding='0' cellspacing='0' border='0' width='100%' style='margin:0 0 14px 0;'>";
+  html += "<tr>";
+  html += "<td width='33%' style='padding-right:6px;'>";
+  html += "<table role='presentation' cellpadding='0' cellspacing='0' border='0' width='100%' style='background:#131313;border-radius:8px;border:1px solid rgba(255,255,255,0.06);'>";
+  html += "<tr><td style='padding:14px 10px;text-align:center;'>";
+  html += "<div style='font-family:Arial,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:4px;'>Urgent</div>";
+  html += "<div style='font-family:Arial,sans-serif;font-size:30px;font-weight:800;color:" + (totalUrgent > 0 ? "#ff4444" : "#4CAF50") + ";line-height:1;'>" + totalUrgent + "</div>";
+  html += "</td></tr></table></td>";
+  html += "<td width='33%' style='padding:0 3px;'>";
+  html += "<table role='presentation' cellpadding='0' cellspacing='0' border='0' width='100%' style='background:#131313;border-radius:8px;border:1px solid rgba(255,255,255,0.06);'>";
+  html += "<tr><td style='padding:14px 10px;text-align:center;'>";
+  html += "<div style='font-family:Arial,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:4px;'>Upcoming</div>";
+  html += "<div style='font-family:Arial,sans-serif;font-size:30px;font-weight:800;color:" + (totalWarning > 0 ? "#E8891A" : "#4CAF50") + ";line-height:1;'>" + totalWarning + "</div>";
+  html += "</td></tr></table></td>";
+  html += "<td width='34%' style='padding-left:6px;'>";
+  html += "<table role='presentation' cellpadding='0' cellspacing='0' border='0' width='100%' style='background:#131313;border-radius:8px;border:1px solid rgba(255,255,255,0.06);'>";
+  html += "<tr><td style='padding:14px 10px;text-align:center;'>";
+  html += "<div style='font-family:Arial,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:4px;'>Patients</div>";
+  html += "<div style='font-family:Arial,sans-serif;font-size:30px;font-weight:800;color:#ffffff;line-height:1;'>" + activePatients + "</div>";
+  html += "</td></tr></table></td>";
+  html += "</tr></table>";
 
-  // Leads
+  // ---- URGENT CARDS (red accent) ----
+  if (overdue.length > 0) {
+    html += card("#ff4444", "Overdue Refills (" + overdue.length + ")", itemsList(overdue, true));
+  }
+  if (billingPastDue.length > 0) {
+    html += card("#ff4444", "Billing Past Due (" + billingPastDue.length + ")", itemsList(billingPastDue, false));
+  }
+  if (unreadEscalation.length > 0) {
+    html += card("#ff4444", "Unread Messages (" + unreadEscalation.length + ")", itemsList(unreadEscalation, false));
+  }
+
+  // ---- UPCOMING CARDS (orange accent) ----
+  if (dueSoon.length > 0) {
+    html += card("#E8891A", "Refills Due Soon (" + dueSoon.length + ")", itemsList(dueSoon, true));
+  }
+  if (billingDue.length > 0) {
+    html += card("#E8891A", "Billing Due (" + billingDue.length + ")", itemsList(billingDue, false));
+  }
+  if (followUps.length > 0) {
+    html += card("#E8891A", "Follow-Ups (" + followUps.length + ")", nameList(followUps));
+  }
+
+  // ---- LEADS (blue accent) ----
   if (leadFollowUps.length > 0) {
-    html += buildSection("LEAD FOLLOW-UPS", "#6B8AFF", "rgba(107,138,255,0.08)", leadFollowUps, false);
+    html += card("#6B8AFF", "Lead Follow-Ups (" + leadFollowUps.length + ")", itemsList(leadFollowUps, false));
   }
 
+  // ---- LABS (minimized — single condensed row at the bottom) ----
+  if (labsOverdueCount > 0 || labsDueSoonCount > 0) {
+    var labsBody = "<div style='font-family:Arial,sans-serif;font-size:13px;color:rgba(255,255,255,0.75);'>";
+    if (labsOverdueCount > 0) labsBody += "<span style='color:#ff4444;font-weight:700;'>" + labsOverdueCount + " overdue</span>";
+    if (labsOverdueCount > 0 && labsDueSoonCount > 0) labsBody += "<span style='color:rgba(255,255,255,0.25);margin:0 8px;'>•</span>";
+    if (labsDueSoonCount > 0) labsBody += "<span style='color:#E8891A;font-weight:700;'>" + labsDueSoonCount + " due within 30 days</span>";
+    labsBody += "<div style='font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;'>Open dashboard for details</div>";
+    labsBody += "</div>";
+    html += card("rgba(255,255,255,0.15)", "Labs", labsBody);
+  }
+
+  // ---- ALL-CLEAR STATE ----
   if (totalUrgent === 0 && totalWarning === 0) {
-    html += "<div style='" + sectionStyle + "background:rgba(76,175,80,0.08);border-left:4px solid #4CAF50;text-align:center;'>";
-    html += "<p style='color:#4CAF50;font-size:16px;font-weight:700;margin:0;'>All clear — no action items today.</p>";
-    html += "</div>";
+    html += "<table role='presentation' cellpadding='0' cellspacing='0' border='0' width='100%' style='margin:0 0 14px 0;background:rgba(76,175,80,0.12);border-radius:8px;border:1px solid rgba(76,175,80,0.3);'>";
+    html += "<tr><td style='padding:24px 16px;text-align:center;'>";
+    html += "<div style='font-family:Arial,sans-serif;font-size:18px;font-weight:800;color:#4CAF50;'>All clear.</div>";
+    html += "<div style='font-family:Arial,sans-serif;font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px;'>No action items today.</div>";
+    html += "</td></tr></table>";
   }
 
-  html += "<div style='text-align:center;margin-top:20px;'>";
-  html += "<a href='" + ADMIN_URL + "' style='display:inline-block;padding:12px 32px;background:#E8891A;color:#fff;text-decoration:none;border-radius:6px;font-weight:700;font-size:14px;letter-spacing:0.1em;text-transform:uppercase;'>Open Dashboard</a>";
-  html += "</div>";
+  // ---- CTA BUTTON ----
+  html += "<table role='presentation' cellpadding='0' cellspacing='0' border='0' width='100%' style='margin:8px 0 4px 0;'>";
+  html += "<tr><td align='center' style='padding:10px 0;'>";
+  html += "<a href='" + ADMIN_URL + "' style='display:inline-block;padding:14px 36px;background:#E8891A;color:#ffffff;text-decoration:none;border-radius:6px;font-family:Arial,sans-serif;font-weight:700;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;'>Open Dashboard</a>";
+  html += "</td></tr></table>";
 
-  sendBrandedEmail("both", "Daily Digest - " + formatDateStr(today), html);
+  sendBrandedEmail("both", "Daily Digest — " + formatDateStr(today), html);
 }
 
 
