@@ -1276,9 +1276,24 @@ function handleGetLabsDashboard(params) {
   var labs = getSheetData("Labs");
   var today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  // Build a lookup of Active TRT patients only.
+  // TRT = patient med or plan contains "test" (covers Testosterone Cypionate,
+  // Monthly Testosterone, Sponsored Testosterone, Tirz + Test, etc.)
+  var allPatients = getSheetData("Patients");
+  var activeTrt = {};
+  for (var pp = 0; pp < allPatients.length; pp++) {
+    if (safeString(allPatients[pp][P_STATUS]) !== "Active") continue;
+    var pMed = safeString(allPatients[pp][P_MED]).toLowerCase();
+    var pPlan = safeString(allPatients[pp][P_PLAN]).toLowerCase();
+    if (pMed.indexOf("test") === -1 && pPlan.indexOf("test") === -1) continue;
+    activeTrt[safeString(allPatients[pp][P_NAME]).toLowerCase()] = true;
+  }
+
   var result = [];
   for (var i = 0; i < labs.length; i++) {
     var patient = safeString(labs[i][L_PATIENT]);
+    if (!activeTrt[patient.toLowerCase()]) continue;
     var nextDue = parseDate(labs[i][L_NEXT_DUE]);
     if (!nextDue) continue;
     var daysUntil = daysBetween(today, nextDue);
@@ -3343,11 +3358,22 @@ function dailyDigest() {
     if (safeString(patients[i][P_FOLLOWUP]) === "YES") followUps.push(name);
   }
 
-  // Labs (minimal — just counts, detail demoted)
+  // Labs (minimal — just counts, detail demoted) — Active TRT patients only
   var labs = getSheetData("Labs");
+  var allPatientsForLabs = getSheetData("Patients");
+  var activeTrtForLabs = {};
+  for (var ap = 0; ap < allPatientsForLabs.length; ap++) {
+    if (safeString(allPatientsForLabs[ap][P_STATUS]) !== "Active") continue;
+    var apMed = safeString(allPatientsForLabs[ap][P_MED]).toLowerCase();
+    var apPlan = safeString(allPatientsForLabs[ap][P_PLAN]).toLowerCase();
+    if (apMed.indexOf("test") === -1 && apPlan.indexOf("test") === -1) continue;
+    activeTrtForLabs[safeString(allPatientsForLabs[ap][P_NAME]).toLowerCase()] = true;
+  }
   var labsOverdueCount = 0;
   var labsDueSoonCount = 0;
   for (var j = 0; j < labs.length; j++) {
+    var labPatientName = safeString(labs[j][L_PATIENT]).toLowerCase();
+    if (!activeTrtForLabs[labPatientName]) continue;
     var labNext = parseDate(labs[j][L_NEXT_DUE]);
     if (!labNext) continue;
     var labDays = daysBetween(today, labNext);
