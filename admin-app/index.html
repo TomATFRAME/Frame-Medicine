@@ -308,7 +308,7 @@ textarea.input-field{min-height:60px;resize:vertical;display:block}
       <div style="text-align:right">
         <select class="input-field" id="detail-status" onchange="updatePatientStatus()" style="width:auto;padding:6px 10px;font-size:11px">
           <option>Active</option><option>Active - No Med</option><option>On Hold</option>
-          <option>Declined Refill</option><option>INACTIVE</option>
+          <option>Declined Refill</option><option>INACTIVE</option><option>Staff</option>
         </select>
       </div>
     </div>
@@ -781,6 +781,8 @@ function searchPatients() {
   if (!q) { renderPatientList(dashboardData.patients); return; }
   var filtered = dashboardData.patients.filter(function(p) {
     return p.name.toLowerCase().indexOf(q) !== -1
+      || (p.preferredName || "").toLowerCase().indexOf(q) !== -1
+      || (p.email || "").toLowerCase().indexOf(q) !== -1
       || (p.medication || "").toLowerCase().indexOf(q) !== -1
       || (p.phone || "").indexOf(q) !== -1;
   });
@@ -800,7 +802,8 @@ function filterPatients(filter) {
   } else if (filter === "followup") {
     filtered = patients.filter(function(p) { return p.followUp; });
   } else if (filter === "labs") {
-    filtered = patients.filter(function(p) { return true; }); // all shown, labs badge on dashboard stat
+    showScreen("labs");
+    return;
   } else if (filter === "unpaid") {
     filtered = patients.filter(function(p) { return p.outstanding > 0; });
   } else if (filter === "no-orders") {
@@ -1169,7 +1172,8 @@ function patientFormHtml(p) {
     + '<option' + (p.status === "Active - No Med" ? " selected" : "") + '>Active - No Med</option>'
     + '<option' + (p.status === "On Hold" ? " selected" : "") + '>On Hold</option>'
     + '<option' + (p.status === "Declined Refill" ? " selected" : "") + '>Declined Refill</option>'
-    + '<option' + (p.status === "INACTIVE" ? " selected" : "") + '>INACTIVE</option></select></div>'
+    + '<option' + (p.status === "INACTIVE" ? " selected" : "") + '>INACTIVE</option>'
+    + '<option' + (p.status === "Staff" ? " selected" : "") + '>Staff</option></select></div>'
     + ig("Notes", "pf-notes", p.notes || "", "textarea");
 }
 
