@@ -597,6 +597,62 @@ function doPost(e) {
 // PATIENT APP — GET HANDLERS
 // ============================================
 
+// ============================================
+// PATIENT SESSION TOKENS (stateless, HMAC-signed)
+// Issued at login; not yet enforced on reads (see ROADMAP P0 #1).
+// ============================================
+
+function bytesToHex(bytes) {
+  var hex = "";
+  for (var i = 0; i < bytes.length; i++) {
+    var b = bytes[i];
+    if (b < 0) b += 256;
+    var h = b.toString(16);
+    if (h.length === 1) h = "0" + h;
+    hex += h;
+  }
+  return hex;
+}
+
+function getPatientTokenSecret() {
+  var props = PropertiesService.getScriptProperties();
+  var secret = props.getProperty("PATIENT_TOKEN_SECRET");
+  if (!secret) {
+    secret = Utilities.getUuid() + Utilities.getUuid();
+    props.setProperty("PATIENT_TOKEN_SECRET", secret);
+  }
+  return secret;
+}
+
+function makePatientToken(phone) {
+  var normalized = formatPhone(phone);
+  var exp = (new Date()).getTime() + (30 * 24 * 60 * 60 * 1000); // 30 days
+  var payload = normalized + "|" + exp;
+  var sig = bytesToHex(Utilities.computeHmacSha256Signature(payload, getPatientTokenSecret()));
+  return Utilities.base64EncodeWebSafe(payload) + "." + sig;
+}
+
+function verifyPatientToken(token, phone) {
+  if (!token) return false;
+  var parts = String(token).split(".");
+  if (parts.length !== 2) return false;
+  var payload = "";
+  try {
+    payload = Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString();
+  } catch (e) {
+    return false;
+  }
+  var sig = bytesToHex(Utilities.computeHmacSha256Signature(payload, getPatientTokenSecret()));
+  if (sig !== parts[1]) return false;
+  var seg = payload.split("|");
+  if (seg.length !== 2) return false;
+  var exp = Number(seg[1]);
+  if (!exp) return false;
+  if ((new Date()).getTime() > exp) return false;
+  if (formatPhone(seg[0]) !== formatPhone(phone)) return false;
+  return true;
+}
+
 function handleLogin(params) {
   var phone = formatPhone(params.phone || "");
   if (!phone) return errorResponse("Phone number required");
@@ -625,7 +681,8 @@ function handleVerifyOtp(params) {
     var data = sheet.getRange(row, 1, 1, 32).getValues()[0];
     return successResponse({
       verified: true,
-      patient: buildPatientObj(data)
+      patient: buildPatientObj(data),
+      patientToken: makePatientToken(phone)
     });
   }
   return errorResponse("Invalid code — " + (result.status || result.message || "verification failed"));
@@ -670,7 +727,7 @@ function handleVerifyBiometric(params) {
       }
       var sheet = getSheet("Patients");
       var data = sheet.getRange(i + 2, 1, 1, 32).getValues()[0];
-      return successResponse({ verified: true, patient: buildPatientObj(data) });
+      return successResponse({ verified: true, patient: buildPatientObj(data), patientToken: makePatientToken(safeString(data[P_PHONE])) });
     }
   }
   return errorResponse("Invalid biometric token");
