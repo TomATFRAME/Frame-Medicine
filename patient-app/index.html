@@ -9,6 +9,8 @@
 <title>FRAME Medicine</title>
 <link rel="manifest" href="https://framemedicine.com/wp-content/uploads/manifest.json">
 <link rel="apple-touch-icon" href="https://framemedicine.com/wp-content/uploads/2025/08/Untitled-design.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -68,7 +70,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
 /* Input */
 .input-field{all:unset;width:100%;padding:12px 14px;background:rgba(255,255,255,0.07);
   border:1px solid rgba(255,255,255,0.18);border-radius:6px;color:#fff;
-  font-family:'Barlow',sans-serif;font-size:14px;-webkit-text-fill-color:#fff}
+  font-family:'Barlow',sans-serif;font-size:16px;-webkit-text-fill-color:#fff}
 .input-field:focus{border-color:#E8891A;background:rgba(232,137,26,0.07)}
 .input-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
   letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.6);
@@ -126,7 +128,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
 .chat-input-inner{max-width:430px;margin:0 auto;display:flex;gap:8px}
 .chat-input{all:unset;flex:1;padding:10px 14px;background:rgba(255,255,255,0.07);
   border:1px solid rgba(255,255,255,0.18);border-radius:20px;color:#fff;
-  font-family:'Barlow',sans-serif;font-size:14px;-webkit-text-fill-color:#fff}
+  font-family:'Barlow',sans-serif;font-size:16px;-webkit-text-fill-color:#fff}
 .chat-send{all:unset;width:40px;height:40px;background:#E8891A;border-radius:50%;
   display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
 
@@ -195,12 +197,12 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
 /* Textarea */
 .textarea-field{all:unset;width:100%;padding:12px 14px;background:rgba(255,255,255,0.07);
   border:1px solid rgba(255,255,255,0.18);border-radius:6px;color:#fff;
-  font-family:'Barlow',sans-serif;font-size:14px;min-height:80px;resize:vertical;
+  font-family:'Barlow',sans-serif;font-size:16px;min-height:80px;resize:vertical;
   -webkit-text-fill-color:#fff;display:block}
 .textarea-field:focus{border-color:#E8891A;background:rgba(232,137,26,0.07)}
 
 /* Header */
-.app-header{padding:16px 0 8px;display:flex;align-items:center;justify-content:space-between}
+.app-header{padding:16px 0 8px;padding-top:calc(16px + env(safe-area-inset-top,0px));display:flex;align-items:center;justify-content:space-between}
 .header-logo{height:28px}
 .header-right{display:flex;align-items:center;gap:12px}
 
@@ -230,7 +232,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
     <div id="login-step1">
       <div class="input-group">
         <label class="input-label">Phone Number</label>
-        <input type="tel" id="login-phone" class="input-field" placeholder="(904) 555-1234">
+        <input type="tel" id="login-phone" class="input-field" placeholder="(904) 555-1234" autocomplete="tel" inputmode="tel">
       </div>
       <button class="btn btn-orange btn-block" onclick="requestOtp()">Send Code</button>
     </div>
@@ -240,7 +242,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
       <div class="input-group">
         <label class="input-label">Verification Code</label>
         <input type="text" id="login-code" class="input-field" placeholder="000000"
-               maxlength="6" inputmode="numeric" style="text-align:center;font-size:24px;letter-spacing:0.3em">
+               maxlength="6" inputmode="numeric" autocomplete="one-time-code" style="text-align:center;font-size:24px;letter-spacing:0.3em">
       </div>
       <button class="btn btn-orange btn-block" onclick="verifyOtp()">Verify</button>
       <button class="btn btn-ghost btn-block mt-12" onclick="showLoginStep1()">Use Different Number</button>
@@ -373,8 +375,22 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
   </div>
 
   <div id="refill-actions" class="mt-16">
-    <button class="btn btn-green btn-block mb-16" onclick="confirmRefill()">Confirm Refill</button>
+    <button class="btn btn-green btn-block mb-16" onclick="startRefillConfirm()">Confirm Refill</button>
     <button class="btn btn-ghost btn-block" onclick="showDeclineForm()">I Don't Need a Refill</button>
+  </div>
+
+  <div id="refill-dose-form" style="display:none" class="mt-16">
+    <div class="eyebrow">Quick Check Before We Ship</div>
+    <p class="text-muted text-sm mb-16">How is your current dose working for you?</p>
+    <button type="button" class="refill-dose-opt" data-val="good" onclick="selectDose(this)" style="all:unset;display:block;width:100%;box-sizing:border-box;padding:14px 16px;margin-bottom:10px;background:#131313;border:1px solid rgba(255,255,255,0.14);border-radius:8px;color:rgba(255,255,255,0.85);font-family:'Barlow',sans-serif;font-size:14px;cursor:pointer">Working great</button>
+    <button type="button" class="refill-dose-opt" data-val="adjust" onclick="selectDose(this)" style="all:unset;display:block;width:100%;box-sizing:border-box;padding:14px 16px;margin-bottom:10px;background:#131313;border:1px solid rgba(255,255,255,0.14);border-radius:8px;color:rgba(255,255,255,0.85);font-family:'Barlow',sans-serif;font-size:14px;cursor:pointer">Okay, but I'd like to adjust it</button>
+    <button type="button" class="refill-dose-opt" data-val="side_effects" onclick="selectDose(this)" style="all:unset;display:block;width:100%;box-sizing:border-box;padding:14px 16px;margin-bottom:10px;background:#131313;border:1px solid rgba(255,255,255,0.14);border-radius:8px;color:rgba(255,255,255,0.85);font-family:'Barlow',sans-serif;font-size:14px;cursor:pointer">I'm having side effects</button>
+    <div class="input-group mt-16" id="refill-dose-note-group" style="display:none">
+      <label class="input-label">Anything your provider should know? (optional)</label>
+      <textarea id="refill-dose-note" class="textarea-field" placeholder="Side effects, questions, or changes you'd like..."></textarea>
+    </div>
+    <button class="btn btn-green btn-block mt-8" onclick="confirmRefill()">Submit Refill Request</button>
+    <button class="btn btn-ghost btn-block mt-12" onclick="cancelRefillConfirm()">Back</button>
   </div>
 
   <div id="refill-decline-form" style="display:none" class="mt-16">
@@ -449,12 +465,12 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
   </div>
 
   <div class="weight-input-wrap">
-    <button class="weight-btn" onclick="adjustWeight(-0.5)">-</button>
+    <button class="weight-btn" onclick="adjustWeight(-0.5)" aria-label="Decrease weight">-</button>
     <div>
       <span class="weight-display" id="weight-value">180</span>
       <span class="weight-unit"> lbs</span>
     </div>
-    <button class="weight-btn" onclick="adjustWeight(0.5)">+</button>
+    <button class="weight-btn" onclick="adjustWeight(0.5)" aria-label="Increase weight">+</button>
   </div>
 
   <button class="btn btn-green btn-block" onclick="submitWeight()">Log Weight</button>
@@ -478,7 +494,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
   <div class="chat-input-wrap">
     <div class="chat-input-inner">
       <input type="text" class="chat-input" id="message-input" placeholder="Type a message...">
-      <button class="chat-send" onclick="sendPatientMessage()">
+      <button class="chat-send" onclick="sendPatientMessage()" aria-label="Send message">
         <span style="color:#fff;font-size:18px">&#10148;</span>
       </button>
     </div>
@@ -521,7 +537,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
 
 <!-- Install Banner -->
 <div class="install-banner" id="install-banner">
-  <button class="install-close" onclick="dismissInstall()">&#10005;</button>
+  <button class="install-close" onclick="dismissInstall()" aria-label="Dismiss">&#10005;</button>
   <div class="eyebrow">Install FRAME</div>
   <p class="text-sm mb-16" style="color:rgba(255,255,255,0.6)">
     Add FRAME Medicine to your home screen for quick access and notifications.
@@ -589,6 +605,7 @@ var selectedRating = null;
 // ---- API HELPERS ----
 function apiGet(action, params, callback) {
   params.action = action;
+  params.patientToken = localStorage.getItem("frame_token") || "";
   fetch(API_URL, {
     method: "POST",
     redirect: "follow",
@@ -605,6 +622,7 @@ function apiGet(action, params, callback) {
 
 function apiPost(action, body, callback) {
   body.action = action;
+  body.patientToken = localStorage.getItem("frame_token") || "";
   fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
@@ -657,6 +675,7 @@ function verifyOtp() {
     if (data.success) {
       if (data.verified) {
         localStorage.setItem("frame_phone", data.patient.phone);
+        localStorage.setItem("frame_token", data.patientToken || "");
         currentPatient = data.patient;
         // Load full dashboard
         apiGet("getPatientDashboard", { phone: data.patient.phone }, function(dashData) {
@@ -690,6 +709,7 @@ function logout() {
     apiPost("revokeBiometric", { phone: phone }, function() {});
   }
   localStorage.removeItem("frame_phone");
+  localStorage.removeItem("frame_token");
   localStorage.removeItem("frame_bio_cred");
   localStorage.removeItem("frame_bio_token");
   localStorage.removeItem("frame_bio_dismissed");
@@ -750,6 +770,7 @@ function updateNav(active) {
 function renderDashboard(data) {
   var p = data.patient;
   currentPatient = p;
+  lastDashboardData = data;
   var preferred = p.preferredName || p.name.split(" ")[0];
   var hour = new Date().getHours();
   var greeting = "Good morning";
@@ -841,8 +862,12 @@ function renderDashboard(data) {
   }
 }
 
+var lastDashboardData = null;
+
 function refreshDashboard() {
   if (!currentPatient) return;
+  // Instant repaint from the last loaded data, then refresh in the background
+  if (lastDashboardData) renderDashboard(lastDashboardData);
   apiGet("getPatientDashboard", { phone: currentPatient.phone }, function(data) {
     if (data.success) renderDashboard(data);
   });
@@ -883,6 +908,8 @@ function setupRefill() {
   document.getElementById("refill-actions").style.display = "block";
   document.getElementById("refill-decline-form").style.display = "none";
   document.getElementById("refill-confirmation").style.display = "none";
+  document.getElementById("refill-dose-form").style.display = "none";
+  resetDoseForm();
 
   // Supply status
   apiGet("getPatientDashboard", { phone: currentPatient.phone }, function(data) {
@@ -903,11 +930,64 @@ function setupRefill() {
   });
 }
 
+var selectedDoseFeedback = null;
+
+function startRefillConfirm() {
+  document.getElementById("refill-actions").style.display = "none";
+  document.getElementById("refill-dose-form").style.display = "block";
+}
+
+function cancelRefillConfirm() {
+  document.getElementById("refill-dose-form").style.display = "none";
+  document.getElementById("refill-actions").style.display = "block";
+}
+
+function resetDoseForm() {
+  selectedDoseFeedback = null;
+  var note = document.getElementById("refill-dose-note");
+  if (note) note.value = "";
+  var grp = document.getElementById("refill-dose-note-group");
+  if (grp) grp.style.display = "none";
+  var opts = document.querySelectorAll(".refill-dose-opt");
+  for (var i = 0; i < opts.length; i++) {
+    opts[i].style.borderColor = "rgba(255,255,255,0.14)";
+    opts[i].style.background = "#131313";
+    opts[i].style.color = "rgba(255,255,255,0.85)";
+  }
+}
+
+function selectDose(el) {
+  var opts = document.querySelectorAll(".refill-dose-opt");
+  for (var i = 0; i < opts.length; i++) {
+    opts[i].style.borderColor = "rgba(255,255,255,0.14)";
+    opts[i].style.background = "#131313";
+    opts[i].style.color = "rgba(255,255,255,0.85)";
+  }
+  el.style.borderColor = "#E8891A";
+  el.style.background = "rgba(232,137,26,0.12)";
+  el.style.color = "#fff";
+  selectedDoseFeedback = el.getAttribute("data-val");
+  document.getElementById("refill-dose-note-group").style.display = "block";
+}
+
 function confirmRefill() {
+  if (!selectedDoseFeedback) {
+    showToast("Please let us know how your dose is working");
+    return;
+  }
+  var note = document.getElementById("refill-dose-note").value;
   apiPost("confirmRefill", {
     patientName: currentPatient.name,
-    medication: currentPatient.medication
+    phone: currentPatient.phone,
+    medication: currentPatient.medication,
+    doseFeedback: selectedDoseFeedback,
+    doseNote: note
   }, function(data) {
+    if (!data || !data.success) {
+      showToast("Could not submit your refill. Please try again.");
+      return;
+    }
+    document.getElementById("refill-dose-form").style.display = "none";
     document.getElementById("refill-actions").style.display = "none";
     document.getElementById("refill-confirmation").style.display = "block";
     showToast("Refill confirmed!");
@@ -925,6 +1005,10 @@ function declineRefill() {
     medication: currentPatient.medication,
     reason: reason
   }, function(data) {
+    if (!data || !data.success) {
+      showToast("Could not submit. Please try again.");
+      return;
+    }
     document.getElementById("refill-decline-form").style.display = "none";
     document.getElementById("refill-actions").style.display = "none";
     showToast("Response recorded. Your team will follow up.");
@@ -1410,6 +1494,7 @@ function biometricLogin() {
       showLoading(false);
       if (data.success && data.verified) {
         localStorage.setItem("frame_phone", data.patient.phone);
+        localStorage.setItem("frame_token", data.patientToken || "");
         currentPatient = data.patient;
         apiGet("getPatientDashboard", { phone: data.patient.phone }, function(dashData) {
           if (dashData.success) {
