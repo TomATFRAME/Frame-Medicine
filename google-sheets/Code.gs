@@ -2511,6 +2511,27 @@ function handleTwilioInbound(e) {
   // Check for keyword responses
   var lowerBody = body.toLowerCase().trim();
 
+  // Carrier opt-out keywords. Twilio unsubscribes the number automatically;
+  // never treat these as a refill decline. Record the opt-out and alert the team.
+  if (lowerBody === "stop" || lowerBody === "stopall" || lowerBody === "unsubscribe" || lowerBody === "cancel" || lowerBody === "end" || lowerBody === "quit") {
+    if (pRow !== -1) {
+      var optSheet = getSheet("Patients");
+      var existingNotes = safeString(optSheet.getRange(pRow, P_NOTES + 1).getValue());
+      var stamp = "SMS opt-out " + formatDateStr(new Date());
+      optSheet.getRange(pRow, P_NOTES + 1).setValue(existingNotes ? (stamp + " | " + existingNotes) : stamp);
+    }
+    appendRefillLog(contactName, "", "SMS opt-out via text", "Twilio", body);
+    sendBrandedEmail("both",
+      "SMS OPT-OUT: " + contactName,
+      "<div style='border-left:4px solid #ff4444;padding:12px 16px;background:rgba(255,68,68,0.08);border-radius:0 8px 8px 0;'>"
+      + "<h2 style='color:#ff4444;margin:0 0 8px 0;'>" + patientLinkHtml(contactName) + " - SMS Opt-Out</h2>"
+      + "<p style='color:#fff;margin:0;'>This contact texted to opt out and has been unsubscribed by the carrier. Do not text them; use email or a call instead.</p>"
+      + "</div>"
+    );
+    return ContentService.createTextOutput("<Response></Response>")
+      .setMimeType(ContentService.MimeType.XML);
+  }
+
   // Refill responses
   if (lowerBody === "yes" || lowerBody === "refill" || lowerBody === "confirm") {
     appendRefillLog(contactName, "", "Refill confirmed via text", "Twilio", body);
@@ -2521,7 +2542,7 @@ function handleTwilioInbound(e) {
       + "<p style='color:rgba(255,255,255,0.6);margin:0;'>Via text: \"" + body + "\"</p>"
       + "</div>"
     );
-  } else if (lowerBody === "no" || lowerBody === "decline" || lowerBody === "stop") {
+  } else if (lowerBody === "no" || lowerBody === "decline") {
     if (pRow !== -1) {
       var pSheet = getSheet("Patients");
       pSheet.getRange(pRow, P_FOLLOWUP + 1).setValue("YES");
