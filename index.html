@@ -9,6 +9,8 @@
 <title>FRAME Medicine</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="https://framemedicine.com/wp-content/uploads/2025/08/Untitled-design.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -771,6 +773,7 @@ function updateNav(active) {
 function renderDashboard(data) {
   var p = data.patient;
   currentPatient = p;
+  lastDashboardData = data;
   var preferred = p.preferredName || p.name.split(" ")[0];
   var hour = new Date().getHours();
   var greeting = "Good morning";
@@ -862,8 +865,12 @@ function renderDashboard(data) {
   }
 }
 
+var lastDashboardData = null;
+
 function refreshDashboard() {
   if (!currentPatient) return;
+  // Instant repaint from the last loaded data, then refresh in the background
+  if (lastDashboardData) renderDashboard(lastDashboardData);
   apiGet("getPatientDashboard", { phone: currentPatient.phone }, function(data) {
     if (data.success) renderDashboard(data);
   });
