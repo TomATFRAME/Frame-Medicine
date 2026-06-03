@@ -605,6 +605,7 @@ var selectedRating = null;
 // ---- API HELPERS ----
 function apiGet(action, params, callback) {
   params.action = action;
+  params.patientToken = localStorage.getItem("frame_token") || "";
   fetch(API_URL, {
     method: "POST",
     redirect: "follow",
@@ -628,6 +629,7 @@ function apiGet(action, params, callback) {
 
 function apiPost(action, body, callback) {
   body.action = action;
+  body.patientToken = localStorage.getItem("frame_token") || "";
   fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
@@ -680,6 +682,7 @@ function verifyOtp() {
     if (data.success) {
       if (data.verified) {
         localStorage.setItem("frame_phone", data.patient.phone);
+        localStorage.setItem("frame_token", data.patientToken || "");
         currentPatient = data.patient;
         // Load full dashboard
         apiGet("getPatientDashboard", { phone: data.patient.phone }, function(dashData) {
@@ -713,6 +716,7 @@ function logout() {
     apiPost("revokeBiometric", { phone: phone }, function() {});
   }
   localStorage.removeItem("frame_phone");
+  localStorage.removeItem("frame_token");
   localStorage.removeItem("frame_bio_cred");
   localStorage.removeItem("frame_bio_token");
   localStorage.removeItem("frame_bio_dismissed");
@@ -1497,6 +1501,7 @@ function biometricLogin() {
       showLoading(false);
       if (data.success && data.verified) {
         localStorage.setItem("frame_phone", data.patient.phone);
+        localStorage.setItem("frame_token", data.patientToken || "");
         currentPatient = data.patient;
         apiGet("getPatientDashboard", { phone: data.patient.phone }, function(dashData) {
           if (dashData.success) {
