@@ -829,6 +829,13 @@ function requireAdmin(params) {
   return null; // null means authorized
 }
 
+function requireTom(params) {
+  var session = verifyAdminToken(params);
+  if (!session) return errorResponse("Not authorized - please log in");
+  if (session.role !== "tom") return errorResponse("Not authorized");
+  return null; // null means authorized as Tom
+}
+
 function handleGetDashboard(params) {
   var patients = getSheetData("Patients");
   var today = new Date();
@@ -1152,6 +1159,8 @@ function handleGetConversation(params) {
 }
 
 function handleGetPnl(params) {
+  var notTom = requireTom(params);
+  if (notTom) return notTom;
   var today = new Date();
   var requestedMonth = safeNumber(params.month);
   var requestedYear = safeNumber(params.year);
@@ -1266,7 +1275,12 @@ function handleGetSettings(params) {
   for (var i = 0; i < data.length; i++) {
     var key = safeString(data[i][0]).trim();
     if (key && key.indexOf("(section)") === -1) {
-      settings[key] = data[i][1];
+      var lk = key.toLowerCase();
+      if (lk.indexOf("password") !== -1 || lk.indexOf("secret") !== -1 || lk.indexOf("token") !== -1 || lk.indexOf("auth") !== -1) {
+        settings[key] = "";
+      } else {
+        settings[key] = data[i][1];
+      }
     }
   }
   return successResponse({ settings: settings });
@@ -1706,6 +1720,13 @@ function handleSavePatient(data) {
     auditLog(data.adminToken, name, "Patient Created", "New patient added");
     return successResponse({ message: "Patient created", isNew: true });
   } else {
+    // Preserve financial/clinical fields the edit form does not send (avoid wiping them)
+    if (data.outstanding === undefined) {
+      rowData[P_OUTSTANDING] = sheet.getRange(existingRow, P_OUTSTANDING + 1).getValue();
+    }
+    if (data.followUp === undefined) {
+      rowData[P_FOLLOWUP] = sheet.getRange(existingRow, P_FOLLOWUP + 1).getValue();
+    }
     // Preserve biometric and comm pref columns (29-31) that aren't in the save form
     var existing = sheet.getRange(existingRow, P_BIOTOKEN + 1, 1, 3).getValues()[0];
     rowData.push(existing[0], existing[1], existing[2]); // BioToken, BioTokenDate, CommPref
@@ -1799,7 +1820,7 @@ function handleEditBilling(data) {
   if (data.outstanding !== undefined) sheet.getRange(bRow, S_OUTSTANDING + 1).setValue(safeNumber(data.outstanding));
   if (data.plan) sheet.getRange(bRow, S_PLAN + 1).setValue(data.plan);
   if (data.status) sheet.getRange(bRow, S_STATUS + 1).setValue(data.status);
-  auditLog(data.adminToken, data.patient || "", "Billing Updated", "Billing record modified");
+  auditLog(data.adminToken, name, "Billing Updated", "Billing record modified");
   return successResponse({ message: "Billing updated" });
 }
 
@@ -2387,6 +2408,8 @@ function handleUpdateSettings(data) {
 }
 
 function handleLockMonth(data) {
+  var notTom = requireTom(data);
+  if (notTom) return notTom;
   var month = safeNumber(data.month);
   var year = safeNumber(data.year);
   if (!year) return errorResponse("Month and year required");
@@ -2439,6 +2462,8 @@ function handleLockMonth(data) {
 }
 
 function handleUpdateOverhead(data) {
+  var notTom = requireTom(data);
+  if (notTom) return notTom;
   var baseOverhead = data.baseOverhead;
   if (baseOverhead !== undefined) {
     setSettingValue("Monthly Overhead", safeNumber(baseOverhead));
@@ -2447,6 +2472,8 @@ function handleUpdateOverhead(data) {
 }
 
 function handleAddOverheadItem(data) {
+  var notTom = requireTom(data);
+  if (notTom) return notTom;
   var month = safeNumber(data.month);
   var year = safeNumber(data.year);
   var description = data.description || "";
@@ -2465,6 +2492,8 @@ function handleAddOverheadItem(data) {
 }
 
 function handleRemoveOverheadItem(data) {
+  var notTom = requireTom(data);
+  if (notTom) return notTom;
   var month = safeNumber(data.month);
   var year = safeNumber(data.year);
   var description = data.description || "";
