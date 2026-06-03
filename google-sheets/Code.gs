@@ -1488,14 +1488,48 @@ function handleLogWeight(data) {
 function handleConfirmRefill(data) {
   var name = data.patientName || "";
   if (!name) return errorResponse("Patient name required");
-  // Log refill
-  appendRefillLog(name, data.medication || "", "Refill confirmed", "App", "");
+
+  // Dose follow-up captured at refill request
+  var feedback = data.doseFeedback || "";
+  var doseNote = data.doseNote || "";
+  var feedbackLabel = "Not provided";
+  var needsAttention = false;
+  if (feedback === "good") { feedbackLabel = "Working great"; }
+  if (feedback === "adjust") { feedbackLabel = "Wants to adjust dose"; needsAttention = true; }
+  if (feedback === "side_effects") { feedbackLabel = "Reporting side effects"; needsAttention = true; }
+
+  // Log refill with dose feedback
+  var logNote = "Dose: " + feedbackLabel;
+  if (doseNote) { logNote = logNote + " | Note: " + doseNote; }
+  appendRefillLog(name, data.medication || "", "Refill confirmed", "App", logNote);
+
+  // Flag for provider follow-up when patient wants a change or has side effects
+  if (needsAttention) {
+    var row = findRowByValue("Patients", P_NAME, name);
+    if (row !== -1) {
+      var psheet = getSheet("Patients");
+      psheet.getRange(row, P_FOLLOWUP + 1).setValue("YES");
+    }
+  }
+
   // Email providers
+  var accent = needsAttention ? "#E8891A" : "#4CAF50";
+  var attnFlag = needsAttention
+    ? "<div style='background:rgba(232,137,26,0.15);border:1px solid rgba(232,137,26,0.4);border-radius:6px;padding:10px;text-align:center;margin-bottom:12px;'><span style='color:#E8891A;font-weight:bold;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;'>DOSE REVIEW REQUESTED</span></div>"
+    : "";
+  var noteRow = doseNote
+    ? "<tr><td style='padding:8px 0;color:rgba(255,255,255,0.5);'>Patient Note</td><td style='padding:8px 0;color:#fff;'>" + doseNote + "</td></tr>"
+    : "";
   sendBrandedEmail("both",
-    "Refill Confirmed: " + name,
-    "<div style='border-left:4px solid #4CAF50;padding:12px 16px;background:rgba(76,175,80,0.08);border-radius:0 8px 8px 0;'>"
-    + "<h2 style='color:#4CAF50;margin:0 0 8px 0;'>" + patientLinkHtml(name) + " — Refill Confirmed</h2>"
-    + "<p style='color:rgba(255,255,255,0.6);margin:0;'>" + (data.medication || "N/A") + " — confirmed via app</p>"
+    (needsAttention ? "DOSE REVIEW: " : "Refill Confirmed: ") + name,
+    attnFlag
+    + "<div style='border-left:4px solid " + accent + ";padding:12px 16px;background:rgba(255,255,255,0.04);border-radius:0 8px 8px 0;'>"
+    + "<h2 style='color:" + accent + ";margin:0 0 8px 0;'>" + patientLinkHtml(name) + " - Refill Confirmed</h2>"
+    + "<table style='width:100%;border-collapse:collapse;'>"
+    + "<tr><td style='padding:8px 0;color:rgba(255,255,255,0.5);width:120px;'>Medication</td><td style='padding:8px 0;color:#fff;'>" + (data.medication || "N/A") + "</td></tr>"
+    + "<tr><td style='padding:8px 0;color:rgba(255,255,255,0.5);'>Dose Feedback</td><td style='padding:8px 0;color:#fff;'>" + feedbackLabel + "</td></tr>"
+    + noteRow
+    + "</table>"
     + "</div>"
   );
   return successResponse({ message: "Refill confirmed" });

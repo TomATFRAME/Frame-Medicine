@@ -373,8 +373,22 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
   </div>
 
   <div id="refill-actions" class="mt-16">
-    <button class="btn btn-green btn-block mb-16" onclick="confirmRefill()">Confirm Refill</button>
+    <button class="btn btn-green btn-block mb-16" onclick="startRefillConfirm()">Confirm Refill</button>
     <button class="btn btn-ghost btn-block" onclick="showDeclineForm()">I Don't Need a Refill</button>
+  </div>
+
+  <div id="refill-dose-form" style="display:none" class="mt-16">
+    <div class="eyebrow">Quick Check Before We Ship</div>
+    <p class="text-muted text-sm mb-16">How is your current dose working for you?</p>
+    <button type="button" class="refill-dose-opt" data-val="good" onclick="selectDose(this)" style="all:unset;display:block;width:100%;box-sizing:border-box;padding:14px 16px;margin-bottom:10px;background:#131313;border:1px solid rgba(255,255,255,0.14);border-radius:8px;color:rgba(255,255,255,0.85);font-family:'Barlow',sans-serif;font-size:14px;cursor:pointer">Working great</button>
+    <button type="button" class="refill-dose-opt" data-val="adjust" onclick="selectDose(this)" style="all:unset;display:block;width:100%;box-sizing:border-box;padding:14px 16px;margin-bottom:10px;background:#131313;border:1px solid rgba(255,255,255,0.14);border-radius:8px;color:rgba(255,255,255,0.85);font-family:'Barlow',sans-serif;font-size:14px;cursor:pointer">Okay, but I'd like to adjust it</button>
+    <button type="button" class="refill-dose-opt" data-val="side_effects" onclick="selectDose(this)" style="all:unset;display:block;width:100%;box-sizing:border-box;padding:14px 16px;margin-bottom:10px;background:#131313;border:1px solid rgba(255,255,255,0.14);border-radius:8px;color:rgba(255,255,255,0.85);font-family:'Barlow',sans-serif;font-size:14px;cursor:pointer">I'm having side effects</button>
+    <div class="input-group mt-16" id="refill-dose-note-group" style="display:none">
+      <label class="input-label">Anything your provider should know? (optional)</label>
+      <textarea id="refill-dose-note" class="textarea-field" placeholder="Side effects, questions, or changes you'd like..."></textarea>
+    </div>
+    <button class="btn btn-green btn-block mt-8" onclick="confirmRefill()">Submit Refill Request</button>
+    <button class="btn btn-ghost btn-block mt-12" onclick="cancelRefillConfirm()">Back</button>
   </div>
 
   <div id="refill-decline-form" style="display:none" class="mt-16">
@@ -890,6 +904,8 @@ function setupRefill() {
   document.getElementById("refill-actions").style.display = "block";
   document.getElementById("refill-decline-form").style.display = "none";
   document.getElementById("refill-confirmation").style.display = "none";
+  document.getElementById("refill-dose-form").style.display = "none";
+  resetDoseForm();
 
   // Supply status
   apiGet("getPatientDashboard", { phone: currentPatient.phone }, function(data) {
@@ -910,11 +926,60 @@ function setupRefill() {
   });
 }
 
+var selectedDoseFeedback = null;
+
+function startRefillConfirm() {
+  document.getElementById("refill-actions").style.display = "none";
+  document.getElementById("refill-dose-form").style.display = "block";
+}
+
+function cancelRefillConfirm() {
+  document.getElementById("refill-dose-form").style.display = "none";
+  document.getElementById("refill-actions").style.display = "block";
+}
+
+function resetDoseForm() {
+  selectedDoseFeedback = null;
+  var note = document.getElementById("refill-dose-note");
+  if (note) note.value = "";
+  var grp = document.getElementById("refill-dose-note-group");
+  if (grp) grp.style.display = "none";
+  var opts = document.querySelectorAll(".refill-dose-opt");
+  for (var i = 0; i < opts.length; i++) {
+    opts[i].style.borderColor = "rgba(255,255,255,0.14)";
+    opts[i].style.background = "#131313";
+    opts[i].style.color = "rgba(255,255,255,0.85)";
+  }
+}
+
+function selectDose(el) {
+  var opts = document.querySelectorAll(".refill-dose-opt");
+  for (var i = 0; i < opts.length; i++) {
+    opts[i].style.borderColor = "rgba(255,255,255,0.14)";
+    opts[i].style.background = "#131313";
+    opts[i].style.color = "rgba(255,255,255,0.85)";
+  }
+  el.style.borderColor = "#E8891A";
+  el.style.background = "rgba(232,137,26,0.12)";
+  el.style.color = "#fff";
+  selectedDoseFeedback = el.getAttribute("data-val");
+  document.getElementById("refill-dose-note-group").style.display = "block";
+}
+
 function confirmRefill() {
+  if (!selectedDoseFeedback) {
+    showToast("Please let us know how your dose is working");
+    return;
+  }
+  var note = document.getElementById("refill-dose-note").value;
   apiPost("confirmRefill", {
     patientName: currentPatient.name,
-    medication: currentPatient.medication
+    phone: currentPatient.phone,
+    medication: currentPatient.medication,
+    doseFeedback: selectedDoseFeedback,
+    doseNote: note
   }, function(data) {
+    document.getElementById("refill-dose-form").style.display = "none";
     document.getElementById("refill-actions").style.display = "none";
     document.getElementById("refill-confirmation").style.display = "block";
     showToast("Refill confirmed!");
