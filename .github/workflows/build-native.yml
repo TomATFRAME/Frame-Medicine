@@ -48,6 +48,16 @@ jobs:
         working-directory: native
         run: npx cap add android
 
+      - name: Generate app icons and splash
+        working-directory: native
+        run: |
+          if [ -f resources/icon.png ]; then
+            npx @capacitor/assets generate --android
+          else
+            echo "No native/resources/icon.png found - shipping default Capacitor icons."
+            echo "Add a 1024x1024 native/resources/icon.png (and optional 2732x2732 splash.png) to brand the app."
+          fi
+
       - name: Sync Capacitor
         working-directory: native
         run: npx cap sync android
@@ -56,15 +66,15 @@ jobs:
         working-directory: native/android
         run: chmod +x ./gradlew
 
-      - name: Generate keystore
+      - name: Decode release keystore
         run: |
-          keytool -genkey -v \
-            -keystore /tmp/keystore.jks \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -alias framemedicine \
-            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-            -keypass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-            -dname "CN=Tom, OU=Development, O=PinePeakMed LLC, L=Jacksonville, ST=FL, C=US"
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "ERROR: ANDROID_KEYSTORE_BASE64 secret is not set."
+            echo "Generate the keystore once and store it as a base64 secret (see native/SIGNING.md), then re-run."
+            exit 1
+          fi
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > /tmp/keystore.jks
+          echo "Restored persistent release keystore from ANDROID_KEYSTORE_BASE64."
 
       - name: Configure release signing
         working-directory: native/android
@@ -124,6 +134,16 @@ jobs:
       - name: Add iOS platform
         working-directory: native
         run: npx cap add ios
+
+      - name: Generate app icons and splash
+        working-directory: native
+        run: |
+          if [ -f resources/icon.png ]; then
+            npx @capacitor/assets generate --ios
+          else
+            echo "No native/resources/icon.png found - shipping default Capacitor icons."
+            echo "Add a 1024x1024 native/resources/icon.png (and optional 2732x2732 splash.png) to brand the app."
+          fi
 
       - name: Sync Capacitor
         working-directory: native
