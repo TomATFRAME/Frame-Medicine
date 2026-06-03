@@ -202,7 +202,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
 .textarea-field:focus{border-color:#E8891A;background:rgba(232,137,26,0.07)}
 
 /* Header */
-.app-header{padding:16px 0 8px;display:flex;align-items:center;justify-content:space-between}
+.app-header{padding:16px 0 8px;padding-top:calc(16px + env(safe-area-inset-top,0px));display:flex;align-items:center;justify-content:space-between}
 .header-logo{height:28px}
 .header-right{display:flex;align-items:center;gap:12px}
 
@@ -465,12 +465,12 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
   </div>
 
   <div class="weight-input-wrap">
-    <button class="weight-btn" onclick="adjustWeight(-0.5)">-</button>
+    <button class="weight-btn" onclick="adjustWeight(-0.5)" aria-label="Decrease weight">-</button>
     <div>
       <span class="weight-display" id="weight-value">180</span>
       <span class="weight-unit"> lbs</span>
     </div>
-    <button class="weight-btn" onclick="adjustWeight(0.5)">+</button>
+    <button class="weight-btn" onclick="adjustWeight(0.5)" aria-label="Increase weight">+</button>
   </div>
 
   <button class="btn btn-green btn-block" onclick="submitWeight()">Log Weight</button>
@@ -494,7 +494,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
   <div class="chat-input-wrap">
     <div class="chat-input-inner">
       <input type="text" class="chat-input" id="message-input" placeholder="Type a message...">
-      <button class="chat-send" onclick="sendPatientMessage()">
+      <button class="chat-send" onclick="sendPatientMessage()" aria-label="Send message">
         <span style="color:#fff;font-size:18px">&#10148;</span>
       </button>
     </div>
@@ -537,7 +537,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
 
 <!-- Install Banner -->
 <div class="install-banner" id="install-banner">
-  <button class="install-close" onclick="dismissInstall()">&#10005;</button>
+  <button class="install-close" onclick="dismissInstall()" aria-label="Dismiss">&#10005;</button>
   <div class="eyebrow">Install FRAME</div>
   <p class="text-sm mb-16" style="color:rgba(255,255,255,0.6)">
     Add FRAME Medicine to your home screen for quick access and notifications.
