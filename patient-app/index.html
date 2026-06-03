@@ -70,7 +70,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
 /* Input */
 .input-field{all:unset;width:100%;padding:12px 14px;background:rgba(255,255,255,0.07);
   border:1px solid rgba(255,255,255,0.18);border-radius:6px;color:#fff;
-  font-family:'Barlow',sans-serif;font-size:14px;-webkit-text-fill-color:#fff}
+  font-family:'Barlow',sans-serif;font-size:16px;-webkit-text-fill-color:#fff}
 .input-field:focus{border-color:#E8891A;background:rgba(232,137,26,0.07)}
 .input-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
   letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.6);
@@ -128,7 +128,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
 .chat-input-inner{max-width:430px;margin:0 auto;display:flex;gap:8px}
 .chat-input{all:unset;flex:1;padding:10px 14px;background:rgba(255,255,255,0.07);
   border:1px solid rgba(255,255,255,0.18);border-radius:20px;color:#fff;
-  font-family:'Barlow',sans-serif;font-size:14px;-webkit-text-fill-color:#fff}
+  font-family:'Barlow',sans-serif;font-size:16px;-webkit-text-fill-color:#fff}
 .chat-send{all:unset;width:40px;height:40px;background:#E8891A;border-radius:50%;
   display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
 
@@ -197,7 +197,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
 /* Textarea */
 .textarea-field{all:unset;width:100%;padding:12px 14px;background:rgba(255,255,255,0.07);
   border:1px solid rgba(255,255,255,0.18);border-radius:6px;color:#fff;
-  font-family:'Barlow',sans-serif;font-size:14px;min-height:80px;resize:vertical;
+  font-family:'Barlow',sans-serif;font-size:16px;min-height:80px;resize:vertical;
   -webkit-text-fill-color:#fff;display:block}
 .textarea-field:focus{border-color:#E8891A;background:rgba(232,137,26,0.07)}
 
@@ -232,7 +232,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
     <div id="login-step1">
       <div class="input-group">
         <label class="input-label">Phone Number</label>
-        <input type="tel" id="login-phone" class="input-field" placeholder="(904) 555-1234">
+        <input type="tel" id="login-phone" class="input-field" placeholder="(904) 555-1234" autocomplete="tel" inputmode="tel">
       </div>
       <button class="btn btn-orange btn-block" onclick="requestOtp()">Send Code</button>
     </div>
@@ -242,7 +242,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
       <div class="input-group">
         <label class="input-label">Verification Code</label>
         <input type="text" id="login-code" class="input-field" placeholder="000000"
-               maxlength="6" inputmode="numeric" style="text-align:center;font-size:24px;letter-spacing:0.3em">
+               maxlength="6" inputmode="numeric" autocomplete="one-time-code" style="text-align:center;font-size:24px;letter-spacing:0.3em">
       </div>
       <button class="btn btn-orange btn-block" onclick="verifyOtp()">Verify</button>
       <button class="btn btn-ghost btn-block mt-12" onclick="showLoginStep1()">Use Different Number</button>
@@ -979,6 +979,10 @@ function confirmRefill() {
     doseFeedback: selectedDoseFeedback,
     doseNote: note
   }, function(data) {
+    if (!data || !data.success) {
+      showToast("Could not submit your refill. Please try again.");
+      return;
+    }
     document.getElementById("refill-dose-form").style.display = "none";
     document.getElementById("refill-actions").style.display = "none";
     document.getElementById("refill-confirmation").style.display = "block";
@@ -997,6 +1001,10 @@ function declineRefill() {
     medication: currentPatient.medication,
     reason: reason
   }, function(data) {
+    if (!data || !data.success) {
+      showToast("Could not submit. Please try again.");
+      return;
+    }
     document.getElementById("refill-decline-form").style.display = "none";
     document.getElementById("refill-actions").style.display = "none";
     showToast("Response recorded. Your team will follow up.");
