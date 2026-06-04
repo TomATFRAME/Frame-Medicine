@@ -215,6 +215,8 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.10em}
 .text-center{text-align:center}
 .flex-between{display:flex;justify-content:space-between;align-items:center}
 .gap-8{gap:8px}
+/* Mobile overflow fix: all:unset on controls wipes box-sizing, so width:100% + padding overflowed the screen. Restore border-box. */
+.input-field,.textarea-field,.chat-input,.btn,.action-btn{box-sizing:border-box}
 </style>
 </head>
 <body>
